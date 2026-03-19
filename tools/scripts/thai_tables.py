@@ -20,15 +20,18 @@ def get_consonant_class(char):
 # ── ห นำ（引導型 ห）—— 改變低類輔音的類別為高類 ──────────────
 # หม หน หง หว หล หร หย หญ หณ
 HO_NAM_PAIRS = {
-    "หม", "หน", "หง", "หว", "หล", "หร", "หย", "หญ", "หณ",
+    "หม", "หน", "หง", "หว", "หล", "หร", "หย", "หญ",
 }
+
+# อ นำ — อ promotes ย to mid class (only in these 4 words)
+O_NAM_PAIRS = {"อย"}
 
 # ── 聲調符號 ──────────────────────────────────────────────────
 TONE_MARKS = {
     "่": "mai_ek",
     "้": "mai_tho",
     "๊": "mai_tri",
-    "๋": "mai_jattawa",
+    "๋": "mai_chattawa",
 }
 
 # ── 複聲母 (Consonant Clusters) ─────────────────────────────────
@@ -40,6 +43,7 @@ CONSONANT_CLUSTERS = {
     "ตร",
     "ปร", "ปล",
     "พร", "พล",
+    # 以下為借詞複聲母（非原生泰語，但實際使用中存在）
     "ผล",
     "บร", "บล",
     "ฟร", "ฟล",
@@ -108,11 +112,12 @@ FINAL_SOUND = {
     "ส": {"sound": "/-t/", "type": "stop", "zh": "停在舌尖，幾乎不送氣"},
     "ฌ": {"sound": "/-t/", "type": "stop", "zh": "停在舌尖，幾乎不送氣"},
     "จ": {"sound": "/-t/", "type": "stop", "zh": "停在舌尖，幾乎不送氣"},
-    "ฬ": {"sound": "/-t/", "type": "stop", "zh": "停在舌尖，幾乎不送氣"},
+    "ฬ": {"sound": "/-n/", "type": "sonorant", "zh": "韻尾位置發 -n，同 ล"},
     "ฉ": {"sound": "/-t/", "type": "stop", "zh": "停在舌尖，幾乎不送氣"},
     # /-n/ 鼻音
     "น": {"sound": "/-n/", "type": "sonorant", "zh": "收 -n 尾，像「安」"},
     "ณ": {"sound": "/-n/", "type": "sonorant", "zh": "收 -n 尾，像「安」"},
+    "ญ": {"sound": "/-n/", "type": "sonorant", "zh": "收 -n 尾，像「安」"},
     # /-m/ 鼻音
     "ม": {"sound": "/-m/", "type": "sonorant", "zh": "收 -m 尾，嘴唇閉合"},
     # /-ng/ 鼻音
@@ -149,10 +154,39 @@ VOWEL_CHARS = {
     "ไ":  {"ipa": "/aj/",  "zh": "像「愛」，快速滑過",       "long": True},
     # 特殊
     "ำ":  {"ipa": "/am/",  "zh": "像「安姆」，a + m 合在一起", "long": False},
+    # ็ (mai taikhu) 是短音標記，不是元音本身，在 tone_analyzer 中特殊處理
 }
 
 # 所有元音字符集合（用於從音節中提取）
 VOWEL_CHAR_SET = set(VOWEL_CHARS.keys())
+
+# ── 複合韻母表（環繞型/組合型） ──────────────────────────────────
+# 泰語許多韻母由多個字符組合，分佈在輔音的前後或上下
+# key = frozenset of vowel chars found in syllable
+# 匹配規則：找到音節中所有元音字符，組成 frozenset 去查表
+COMPOUND_VOWELS: dict[frozenset[str], dict] = {
+    # เ-า = /aw/ (เข้า, เช้า, เจ้า)
+    frozenset({"เ", "า"}):  {"ipa": "/aw/",  "zh": "像「奧」，a 滑向 w",      "long": True,  "display": "เ-า"},
+    # เ-ีย = /ia/ (เรียน, เลีย, เสีย)
+    frozenset({"เ", "ี"}):  {"ipa": "/ia/",  "zh": "像「衣啊」，i 滑向 a",     "long": True,  "display": "เ-ีย"},
+    # เ-ือ = /ɯa/ (เสือ, เดือน, เรือ)
+    frozenset({"เ", "ื"}):  {"ipa": "/ɯa/", "zh": "像悶哼滑向「啊」",          "long": True,  "display": "เ-ือ"},
+    # เ-ิ = /ɤː/ (เดิน, เกิด, เลิก) — note: เ-ิ without อ
+    frozenset({"เ", "ิ"}):  {"ipa": "/ɤː/", "zh": "像「餓」拉長，嘴微張",      "long": True,  "display": "เ-ิ"},
+    # เ-ะ = /e/ short (เกะ, เละ, เตะ)
+    frozenset({"เ", "ะ"}):  {"ipa": "/e/",   "zh": "短元音，像「誒」",          "long": False, "display": "เ-ะ"},
+    # เ-าะ = /ɔ/ short (เกาะ, เบาะ)
+    frozenset({"เ", "า", "ะ"}): {"ipa": "/ɔ/", "zh": "短元音，像「哦」嘴圓",   "long": False, "display": "เ-าะ"},
+    # แ-ะ = /ɛ/ short (แกะ, แพะ)
+    frozenset({"แ", "ะ"}):  {"ipa": "/ɛ/",   "zh": "短元音，嘴張大像「欸」",    "long": False, "display": "แ-ะ"},
+    # โ-ะ = /o/ short (โกะ)
+    frozenset({"โ", "ะ"}):  {"ipa": "/o/",   "zh": "短元音，像「哦」",          "long": False, "display": "โ-ะ"},
+    # เ-อะ = /ɤ/ short (เลอะ) — อ is consonant, ะ is vowel + เ
+    # Handled: เ+ะ in vowel set, but need to detect อ between them
+    #   → handled in tone_analyzer special case
+    # เ-อ = /ɤː/ long (เธอ, เจอ) — อ is consonant, handled in tone_analyzer
+    # ัว = /ua/ (กลัว, วัว, ตัว) — ว is consonant, handled in tone_analyzer
+}
 
 def get_vowel_info(char):
     """查詢單個元音字符的資訊"""
@@ -169,7 +203,7 @@ TONE_TABLE = {
     ("mid", "mai_ek",     "live"):       "low",
     ("mid", "mai_tho",    "live"):       "fall",
     ("mid", "mai_tri",    "live"):       "high",
-    ("mid", "mai_jattawa","live"):       "rise",
+    ("mid", "mai_chattawa","live"):       "rise",
     ("mid", None,         "dead_short"): "low",
     ("mid", None,         "dead_long"):  "low",
     ("mid", "mai_ek",     "dead_short"): "low",
@@ -249,9 +283,26 @@ INITIAL_TABLE = {
 }
 
 def get_ho_nam_real_consonant(syllable: str) -> str | None:
-    """若為 ห นำ 模式，回傳真正的聲母（第二個輔音）"""
-    if len(syllable) >= 2 and syllable[:2] in HO_NAM_PAIRS:
-        return syllable[1]
+    """若為 ห นำ 模式，回傳真正的聲母（第二個輔音）。
+
+    ห นำ 條件：ห 和下一個低類輔音必須相鄰（中間無元音）。
+    例：หมา(✓) หนู(✓) เหมือน(✓)  但 หุง(✗) ห้าม(✗) หอม(✗)
+    """
+    _all = HIGH_CLASS | MID_CLASS | LOW_CLASS
+    _vowels = set("ะัาิีึืุูเแโใไำ็")
+    # Find all consonant positions
+    consonants = [(i, c) for i, c in enumerate(syllable) if c in _all]
+    # Look for ห followed by a ห นำ partner with NO vowels between them
+    for idx, (pos, ch) in enumerate(consonants):
+        if ch == "ห" and idx + 1 < len(consonants):
+            next_pos, next_ch = consonants[idx + 1]
+            # Check adjacency: only tone marks (่้๊๋) allowed between them, no vowels
+            between = syllable[pos + 1:next_pos]
+            has_vowel = any(c in _vowels for c in between)
+            if not has_vowel:
+                pair = "ห" + next_ch
+                if pair in HO_NAM_PAIRS:
+                    return next_ch
     return None
 
 # 短元音字符（無韻尾時 = 聲門塞音收尾 = dead_short）
