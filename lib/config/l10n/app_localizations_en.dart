@@ -12,35 +12,78 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Thai Yu';
 
   @override
-  String get home => 'Home';
+  String get pasteThaiText => 'Paste Thai text';
 
   @override
-  String get lessons => 'Lessons';
+  String get analyze => 'Analyze';
 
   @override
-  String get vocabulary => 'Vocabulary';
-
-  @override
-  String get profile => 'Profile';
-
-  @override
-  String get signIn => 'Sign In';
-
-  @override
-  String get signUp => 'Sign Up';
-
-  @override
-  String get startLesson => 'Start Lesson';
-
-  @override
-  String get continueLesson => 'Continue';
-
-  @override
-  String get quiz => 'Quiz';
+  String get learningMode => 'Learning Mode';
 
   @override
   String get settings => 'Settings';
 
   @override
-  String get learnThaiYourWay => 'Learn Thai, Your Way';
+  String get apiKeySettings => 'API Settings';
+
+  @override
+  String get apiKeyHint => 'Enter your OpenAI API key';
+
+  @override
+  String get validate => 'Validate';
+
+  @override
+  String get apiKeyValid => 'API key is valid';
+
+  @override
+  String get apiKeyInvalid => 'API key is invalid';
+
+  @override
+  String get apiKeyNotSet => 'API key not set';
+
+  @override
+  String get ttsNote => 'TTS synthesized audio — tones are approximate';
+
+  @override
+  String get play => 'Play';
+
+  @override
+  String get onset => 'Onset';
+
+  @override
+  String get vowel => 'Vowel';
+
+  @override
+  String get coda => 'Coda';
+
+  @override
+  String get toneMid => 'Mid';
+
+  @override
+  String get toneLow => 'Low';
+
+  @override
+  String get toneFall => 'Falling';
+
+  @override
+  String get toneHigh => 'High';
+
+  @override
+  String get toneRise => 'Rising';
+
+  @override
+  String get emptyStateTitle => 'Welcome';
+
+  @override
+  String get emptyStateHint =>
+      'Paste Thai text above to see each word\'s onset, vowel, and tone broken down for you.';
+
+  @override
+  String get networkError => 'Unable to connect. Please try again later.';
+
+  @override
+  String get nonThaiInput => 'Please enter Thai text';
+
+  @override
+  String get silentCoda => 'silent';
 }

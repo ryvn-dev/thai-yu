@@ -7,38 +7,54 @@ abstract final class AppTheme {
   static ThemeData get light => ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          primary: AppColors.primary,
-          secondary: AppColors.secondary,
-          tertiary: AppColors.tertiary,
+        scaffoldBackgroundColor: AppColors.bg,
+        colorScheme: ColorScheme.light(
+          primary: AppColors.ink,
+          secondary: AppColors.accent,
           surface: AppColors.surface,
+          onSurface: AppColors.ink,
           error: AppColors.error,
-          brightness: Brightness.light,
+          outline: AppColors.border,
+          outlineVariant: AppColors.border2,
         ),
-        textTheme: AppTextStyles.uiTextTheme,
+        textTheme: AppTextStyles.uiTextTheme.apply(
+          bodyColor: AppColors.ink,
+          displayColor: AppColors.ink,
+        ),
         appBarTheme: const AppBarTheme(
-          centerTitle: true,
+          centerTitle: false,
           elevation: 0,
+          backgroundColor: Colors.transparent,
+          foregroundColor: AppColors.ink,
         ),
         cardTheme: CardThemeData(
-          elevation: 1,
+          elevation: 0,
+          color: AppColors.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColors.border),
           ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            backgroundColor: AppColors.ink,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
+          fillColor: AppColors.surface,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: AppColors.border),
           ),
         ),
       );
@@ -46,19 +62,33 @@ abstract final class AppTheme {
   static ThemeData get dark => ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          primary: AppColors.primary,
-          secondary: AppColors.secondary,
-          tertiary: AppColors.tertiary,
+        scaffoldBackgroundColor: AppColors.bgDark,
+        colorScheme: ColorScheme.dark(
+          primary: AppColors.inkDark,
+          secondary: AppColors.accent,
           surface: AppColors.surfaceDark,
+          onSurface: AppColors.inkDark,
           error: AppColors.error,
-          brightness: Brightness.dark,
+          outline: AppColors.border,
+          outlineVariant: AppColors.border2,
         ),
-        textTheme: AppTextStyles.uiTextTheme,
+        textTheme: AppTextStyles.uiTextTheme.apply(
+          bodyColor: AppColors.inkDark,
+          displayColor: AppColors.inkDark,
+        ),
         appBarTheme: const AppBarTheme(
-          centerTitle: true,
+          centerTitle: false,
           elevation: 0,
+          backgroundColor: Colors.transparent,
+          foregroundColor: AppColors.inkDark,
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          color: AppColors.surfaceDark,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColors.border),
+          ),
         ),
       );
 }

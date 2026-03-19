@@ -104,59 +104,23 @@ abstract class AppLocalizations {
   /// **'Thai Yu'**
   String get appTitle;
 
-  /// No description provided for @home.
+  /// No description provided for @pasteThaiText.
   ///
   /// In en, this message translates to:
-  /// **'Home'**
-  String get home;
+  /// **'Paste Thai text'**
+  String get pasteThaiText;
 
-  /// No description provided for @lessons.
+  /// No description provided for @analyze.
   ///
   /// In en, this message translates to:
-  /// **'Lessons'**
-  String get lessons;
+  /// **'Analyze'**
+  String get analyze;
 
-  /// No description provided for @vocabulary.
+  /// No description provided for @learningMode.
   ///
   /// In en, this message translates to:
-  /// **'Vocabulary'**
-  String get vocabulary;
-
-  /// No description provided for @profile.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile'**
-  String get profile;
-
-  /// No description provided for @signIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign In'**
-  String get signIn;
-
-  /// No description provided for @signUp.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign Up'**
-  String get signUp;
-
-  /// No description provided for @startLesson.
-  ///
-  /// In en, this message translates to:
-  /// **'Start Lesson'**
-  String get startLesson;
-
-  /// No description provided for @continueLesson.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue'**
-  String get continueLesson;
-
-  /// No description provided for @quiz.
-  ///
-  /// In en, this message translates to:
-  /// **'Quiz'**
-  String get quiz;
+  /// **'Learning Mode'**
+  String get learningMode;
 
   /// No description provided for @settings.
   ///
@@ -164,11 +128,131 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
-  /// No description provided for @learnThaiYourWay.
+  /// No description provided for @apiKeySettings.
   ///
   /// In en, this message translates to:
-  /// **'Learn Thai, Your Way'**
-  String get learnThaiYourWay;
+  /// **'API Settings'**
+  String get apiKeySettings;
+
+  /// No description provided for @apiKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your OpenAI API key'**
+  String get apiKeyHint;
+
+  /// No description provided for @validate.
+  ///
+  /// In en, this message translates to:
+  /// **'Validate'**
+  String get validate;
+
+  /// No description provided for @apiKeyValid.
+  ///
+  /// In en, this message translates to:
+  /// **'API key is valid'**
+  String get apiKeyValid;
+
+  /// No description provided for @apiKeyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'API key is invalid'**
+  String get apiKeyInvalid;
+
+  /// No description provided for @apiKeyNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'API key not set'**
+  String get apiKeyNotSet;
+
+  /// No description provided for @ttsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'TTS synthesized audio — tones are approximate'**
+  String get ttsNote;
+
+  /// No description provided for @play.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get play;
+
+  /// No description provided for @onset.
+  ///
+  /// In en, this message translates to:
+  /// **'Onset'**
+  String get onset;
+
+  /// No description provided for @vowel.
+  ///
+  /// In en, this message translates to:
+  /// **'Vowel'**
+  String get vowel;
+
+  /// No description provided for @coda.
+  ///
+  /// In en, this message translates to:
+  /// **'Coda'**
+  String get coda;
+
+  /// No description provided for @toneMid.
+  ///
+  /// In en, this message translates to:
+  /// **'Mid'**
+  String get toneMid;
+
+  /// No description provided for @toneLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get toneLow;
+
+  /// No description provided for @toneFall.
+  ///
+  /// In en, this message translates to:
+  /// **'Falling'**
+  String get toneFall;
+
+  /// No description provided for @toneHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get toneHigh;
+
+  /// No description provided for @toneRise.
+  ///
+  /// In en, this message translates to:
+  /// **'Rising'**
+  String get toneRise;
+
+  /// No description provided for @emptyStateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome'**
+  String get emptyStateTitle;
+
+  /// No description provided for @emptyStateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste Thai text above to see each word\'s onset, vowel, and tone broken down for you.'**
+  String get emptyStateHint;
+
+  /// No description provided for @networkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to connect. Please try again later.'**
+  String get networkError;
+
+  /// No description provided for @nonThaiInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter Thai text'**
+  String get nonThaiInput;
+
+  /// No description provided for @silentCoda.
+  ///
+  /// In en, this message translates to:
+  /// **'silent'**
+  String get silentCoda;
 }
 
 class _AppLocalizationsDelegate
