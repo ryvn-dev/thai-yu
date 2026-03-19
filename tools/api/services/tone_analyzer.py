@@ -5,6 +5,8 @@ _scripts_dir = str(Path(__file__).resolve().parent.parent.parent / "scripts")
 if _scripts_dir not in sys.path:
     sys.path.insert(0, _scripts_dir)
 
+from thai_glosses import THAI_ZH_GLOSSES
+from word_overrides import WORD_OVERRIDES
 from thai_tables import (
     CLUSTER_TABLE,
     CONSONANT_CLUSTERS,
@@ -14,11 +16,13 @@ from thai_tables import (
     SHORT_VOWEL_CHARS,
     TONE_MARKS,
     TONE_TABLE,
+    COMPOUND_VOWELS,
     VOWEL_CHARS,
     VOWEL_CHAR_SET,
     HIGH_CLASS,
     MID_CLASS,
     LOW_CLASS,
+    O_NAM_PAIRS,
     get_consonant_class,
     get_ho_nam_real_consonant,
     is_cluster,
@@ -142,8 +146,27 @@ def analyze_syllable(syllable: str) -> SyllableAnalysis:
         initial = real_initial  # ว not ห
         consonant_class = "high"  # promoted by ห นำ
     elif initial:
-        # For clusters like กว, use first char for class
-        consonant_class = get_consonant_class(initial[0])
+        # อ นำ detection — อ promotes ย to mid class (อย่า, อยาก, อย่าง, อยู่)
+        consonants = [c for c in syllable if c in _ALL_CONSONANTS]
+        if (
+            len(consonants) >= 2
+            and consonants[0] == "อ"
+            and consonants[1] == "ย"
+            and (consonants[0] + consonants[1]) in O_NAM_PAIRS
+        ):
+            # Check adjacency (no vowels between อ and ย)
+            _vowels_set = set("ะัาิีึืุูเแโใไำ")
+            o_pos = syllable.index("อ")
+            y_pos = syllable.index("ย", o_pos + 1) if "ย" in syllable[o_pos + 1:] else -1
+            between = syllable[o_pos + 1:y_pos] if y_pos > 0 else ""
+            if y_pos > 0 and not any(c in _vowels_set for c in between):
+                initial = "ย"
+                consonant_class = "mid"  # promoted by อ นำ
+            else:
+                consonant_class = get_consonant_class(initial[0])
+        else:
+            # For clusters like กว, use first char for class
+            consonant_class = get_consonant_class(initial[0])
     else:
         consonant_class = "mid"
 
@@ -221,17 +244,123 @@ def _build_syllable_parts(
                 zh_approx=zh,
             ))
 
-    # 韻母 — from pronunciate syllable
+    # 韻母 — check ็ first, then compound vowels, special patterns, then single vowels
     vowels = _extract_vowels(raw_syllable)
+    vowel_added = False
+
+    # ็ (mai taikhu) = short vowel marker
+    # เ-็ = short /e/, แ-็ = short /ɛ/, ็ alone = short /ɔ/
+    if not vowel_added and "็" in raw_syllable:
+        has_e = "เ" in raw_syllable
+        has_ae = "แ" in raw_syllable
+        if has_e:
+            parts.append(PhonemeBreakdown(
+                label="韻母", char="เ-็",
+                sound="/e/", zh_approx="短元音，像短「誒」",
+            ))
+        elif has_ae:
+            parts.append(PhonemeBreakdown(
+                label="韻母", char="แ-็",
+                sound="/ɛ/", zh_approx="短元音，像短「欸」",
+            ))
+        else:
+            parts.append(PhonemeBreakdown(
+                label="韻母", char="็",
+                sound="/ɔ/", zh_approx="短元音標記，像短「哦」",
+            ))
+        vowel_added = True
+
     if vowels:
-        vowel_chars = "".join(v["char"] for v in vowels)
-        primary = vowels[0]
+        vowel_char_set = frozenset(v["char"] for v in vowels)
+
+        # Special: เ-อะ pattern (เลอะ) — เ+ะ in vowels, อ as consonant
+        # Must check BEFORE compound lookup since เ+ะ also matches เ-ะ
+        if vowel_char_set == frozenset({"เ", "ะ"}):
+            consonants = [c for c in raw_syllable if c in _ALL_CONSONANTS]
+            if "อ" in consonants and consonants[-1] == "อ":
+                parts.append(PhonemeBreakdown(
+                    label="韻母", char="เ-อะ",
+                    sound="/ɤ/", zh_approx="短元音，像「餓」嘴微張",
+                ))
+                vowel_added = True
+
+        compound = COMPOUND_VOWELS.get(vowel_char_set) if not vowel_added else None
+
+        # Special: เ-อ pattern (เธอ, เจอ) — อ is consonant not in vowel set
+        # Detect: has เ + อ appears after consonant (not as initial)
+        if not compound and "เ" in vowel_char_set and len(vowel_char_set) == 1:
+            consonants = [c for c in raw_syllable if c in _ALL_CONSONANTS]
+            if len(consonants) >= 2 and consonants[-1] == "อ":
+                parts.append(PhonemeBreakdown(
+                    label="韻母", char="เ-อ",
+                    sound="/ɤː/", zh_approx="像「餓」拉長，嘴微張",
+                ))
+                vowel_added = True
+
+        # Special: ัว pattern (กลัว, วัว, ตัว) — ว acts as part of vowel
+        if not vowel_added and not compound and "ั" in vowel_char_set:
+            consonants = [c for c in raw_syllable if c in _ALL_CONSONANTS]
+            if consonants and consonants[-1] == "ว":
+                parts.append(PhonemeBreakdown(
+                    label="韻母", char="-ัว",
+                    sound="/ua/", zh_approx="像「烏啊」，u 滑向 a",
+                ))
+                vowel_added = True
+
+        if not vowel_added and compound:
+            parts.append(PhonemeBreakdown(
+                label="韻母", char=compound["display"],
+                sound=compound["ipa"], zh_approx=compound["zh"],
+            ))
+            vowel_added = True
+
+        if not vowel_added:
+            vowel_chars = "".join(v["char"] for v in vowels)
+            primary = vowels[0]
+            parts.append(PhonemeBreakdown(
+                label="韻母", char=vowel_chars,
+                sound=primary["ipa"], zh_approx=primary["zh"],
+            ))
+            vowel_added = True
+
+    # Special: -วย pattern (ช่วย, รวย, หวย, สวย) — วย = /uai/ diphthong
+    # No explicit vowel chars, ว and ย are both consonants acting as vowel
+    if not vowel_added:
+        consonants = [c for c in raw_syllable if c in _ALL_CONSONANTS]
+        if len(consonants) >= 3 and consonants[-2] == "ว" and consonants[-1] == "ย":
+            parts.append(PhonemeBreakdown(
+                label="韻母", char="-วย",
+                sound="/uai/", zh_approx="像「歪」，u-a-i 三滑音",
+            ))
+            vowel_added = True
+
+    # Special: อ acting as vowel /ɔː/ — no vowel chars detected
+    # Pattern 1: C + อ (final position: กอ, ขอ, พ่อ)
+    # Pattern 2: C + อ + coda (middle position: คลอง, ป้อม, สอง, มอบ)
+    if not vowel_added:
+        consonants = [(i, c) for i, c in enumerate(raw_syllable) if c in _ALL_CONSONANTS]
+        o_positions = [i for i, (_, c) in enumerate(consonants) if c == "อ"]
+        if o_positions:
+            # อ is present as a consonant — it's acting as vowel
+            o_idx = o_positions[0]
+            initial = syl.initial_consonant or ""
+            initial_count = len(initial)
+            # อ should be after the initial consonant(s), not be the initial itself
+            if o_idx >= initial_count or (initial_count == 0 and o_idx > 0):
+                parts.append(PhonemeBreakdown(
+                    label="韻母", char="-อ",
+                    sound="/ɔː/", zh_approx="長元音，嘴圓像「哦——」",
+                ))
+                vowel_added = True
+
+    # Implicit short vowel: no vowel detected at all (จม, ทบ, กล, ตร, etc.)
+    # These have an implied short /o/ or /a/
+    if not vowel_added:
         parts.append(PhonemeBreakdown(
-            label="韻母",
-            char=vowel_chars,
-            sound=primary["ipa"],
-            zh_approx=primary["zh"],
+            label="韻母", char="(隱含)",
+            sound="/o/", zh_approx="隱含短元音，像短「哦」",
         ))
+        vowel_added = True
 
     # 韻尾 — from pronunciate
     if syl.final_sound and syl.final_consonant:
@@ -247,7 +376,7 @@ def _build_syllable_parts(
     cls_label = {"high": "高類", "mid": "中類", "low": "低類"}.get(
         syl.consonant_class or "", syl.consonant_class or "")
     mark_label = {"mai_ek": " + ่", "mai_tho": " + ้",
-                  "mai_tri": " + ๊", "mai_jattawa": " + ๋"}.get(
+                  "mai_tri": " + ๊", "mai_chattawa": " + ๋"}.get(
         syl.tone_mark or "", "")
     syl_label = {"live": "活音節", "dead_long": "長元音閉音節",
                  "dead_short": "短元音閉音節"}.get(
@@ -308,7 +437,61 @@ def _map_original_to_pronunciation(original: str, pron_syllables: list[str]) -> 
     return result
 
 
+def _build_from_override(word: str, override: dict) -> WordAnalysis:
+    """Build WordAnalysis from a WORD_OVERRIDES entry."""
+    rtgs = override["rtgs"]
+    syllable_parts = []
+    tones = []
+    original_syls = [word]  # single-syllable override words
+
+    for syl_def in override["syllables"]:
+        tone = syl_def["tone"]
+        tones.append(tone)
+
+        parts: list[PhonemeBreakdown] = []
+        if syl_def.get("onset"):
+            parts.append(PhonemeBreakdown(
+                label="聲母", char=syl_def["onset"],
+                sound=syl_def.get("onset_ipa", ""),
+                zh_approx=syl_def.get("zh_onset", ""),
+            ))
+        if syl_def.get("vowel"):
+            parts.append(PhonemeBreakdown(
+                label="韻母", char=syl_def["vowel"],
+                sound=syl_def.get("vowel_ipa", ""),
+                zh_approx=syl_def.get("zh_vowel", ""),
+            ))
+        if syl_def.get("coda"):
+            fs = FINAL_SOUND.get(syl_def["coda"])
+            parts.append(PhonemeBreakdown(
+                label="韻尾", char=syl_def["coda"],
+                sound=fs["sound"] if fs else "",
+                zh_approx=fs["zh"] if fs else "",
+                is_silent=fs["type"] == "stop" if fs else False,
+            ))
+
+        syllable_parts.append(SyllableParts(
+            thai=word, original_thai=word, rtgs=rtgs,
+            tone=tone, tone_reason="",
+            parts=parts,
+            is_ho_nam=syl_def.get("ho_nam", False),
+            has_implicit_vowel=False,
+        ))
+
+    return WordAnalysis(
+        thai=word, rtgs=rtgs,
+        gloss=THAI_ZH_GLOSSES.get(word, "…"),
+        syllables=[], tones=tones,
+        original_syllables=original_syls,
+        syllable_parts=syllable_parts,
+    )
+
+
 def analyze_word(word: str) -> WordAnalysis:
+    # Check override table first
+    if word in WORD_OVERRIDES:
+        return _build_from_override(word, WORD_OVERRIDES[word])
+
     raw_syllables = tokenize_syllables(word)
     analyzed = [analyze_syllable(s) for s in raw_syllables]
 
@@ -320,7 +503,14 @@ def analyze_word(word: str) -> WordAnalysis:
 
     syllable_parts = []
     for syl, raw, orig in zip(analyzed, raw_syllables, original_syls):
-        is_ho_nam = get_ho_nam_real_consonant(raw) is not None
+        # Check ห นำ: pronunciate form has หC pair
+        pron_ho_nam = get_ho_nam_real_consonant(raw) is not None
+        orig_ho_nam = get_ho_nam_real_consonant(orig) is not None
+        # Accept if: original has ห นำ, OR pronunciate added ห (not in original)
+        # Reject if: pronunciate rearranged existing chars to create false ห นำ
+        #   (e.g. หาว→หวาว: orig has ห but NOT adjacent to ว)
+        pron_added_h = "ห" in raw and "ห" not in orig
+        is_ho_nam = pron_ho_nam and (orig_ho_nam or pron_added_h)
         # Implicit vowel = pronunciate added a vowel char not in original
         # (e.g. สะ has ะ that ส doesn't)
         has_implicit = any(c in VOWEL_CHAR_SET and c not in orig for c in raw)
@@ -334,7 +524,7 @@ def analyze_word(word: str) -> WordAnalysis:
     return WordAnalysis(
         thai=word,
         rtgs=word_rtgs,
-        gloss="…",
+        gloss=THAI_ZH_GLOSSES.get(word, "…"),
         syllables=analyzed,
         tones=tones,
         original_syllables=original_syls,
