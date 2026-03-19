@@ -13,6 +13,7 @@ CLAUDE.md
 tools/.venv/
 tools/.dart_tool/
 tools/.pytest_cache/
+tools/.cache/
 tools/.python-version
 __pycache__/
 *.pyc
