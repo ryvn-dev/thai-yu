@@ -1,0 +1,15 @@
+{
+  "@@locale": "th",
+  "appTitle": "Thai Yu",
+  "home": "หน้าหลัก",
+  "lessons": "บทเรียน",
+  "vocabulary": "คำศัพท์",
+  "profile": "โปรไฟล์",
+  "signIn": "เข้าสู่ระบบ",
+  "signUp": "สมัครสมาชิก",
+  "startLesson": "เริ่มบทเรียน",
+  "continueLesson": "ดำเนินการต่อ",
+  "quiz": "แบบทดสอบ",
+  "settings": "ตั้งค่า",
+  "learnThaiYourWay": "เรียนภาษาไทย ในแบบของคุณ"
+}

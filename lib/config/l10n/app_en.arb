@@ -1,0 +1,18 @@
+{
+  "@@locale": "en",
+  "appTitle": "Thai Yu",
+  "@appTitle": {
+    "description": "The application title"
+  },
+  "home": "Home",
+  "lessons": "Lessons",
+  "vocabulary": "Vocabulary",
+  "profile": "Profile",
+  "signIn": "Sign In",
+  "signUp": "Sign Up",
+  "startLesson": "Start Lesson",
+  "continueLesson": "Continue",
+  "quiz": "Quiz",
+  "settings": "Settings",
+  "learnThaiYourWay": "Learn Thai, Your Way"
+}
