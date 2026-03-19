@@ -100,8 +100,12 @@ khâo          ← 第二層：RTGS 羅馬拼音
 - 圖例不可完全隱藏（它是新用戶的即時對照表）
 
 ### 技術實作
-- 聲調資料由 Claude API 分析輸出（`tone` 欄位，值為 `mid / low / fall / high / rise`）
-- iOS 渲染層根據 `tone` 值套用對應的 `UIColor` 或 SwiftUI `Color`
+- **聲調由規則引擎決定，非 AI**。泰語聲調是三個變數的確定性查表：
+  1. **輔音類別**（低類 / 中類 / 高類）— 44 個泰文子音各歸一類
+  2. **聲調符號**（無 / ่ / ้ / ๊ / ๋）— 寫在字上方的符號
+  3. **音節類型**（活音節 / 死長音節 / 死短音節）— 由韻尾和元音長短決定
+- OpenAI API 只負責分詞、詞義、拼讀描述，並提供上述三個變數
+- App 端用規則表查出正確聲調，不依賴 AI 判斷
 - 顏色套用在**泰文原字**上；羅馬拼音和中文詞義保持預設顏色（灰黑），避免視覺過載
 
 ---
@@ -250,23 +254,25 @@ v1 為個人使用設計，不需要後端。用戶在 App 設定中輸入自己
 ## 技術架構總覽
 
 ```
-iOS App (SwiftUI)
+Flutter App (Riverpod + go_router)
 │
 ├── 輸入層
-│   └── TextEditor + 貼上偵測
+│   └── TextField + 貼上偵測
 │
 ├── 分析層
-│   ├── 快取查詢 (CoreData, key = SHA-256)
-│   └── Claude API (claude-haiku, 單次請求, JSON output)
+│   ├── 快取查詢 (drift/SQLite, key = SHA-256)
+│   ├── OpenAI API (gpt-4o-mini, 分詞 + 詞義 + 拼讀描述)
+│   └── 聲調規則引擎 (輔音類別 × 聲調符號 × 音節類型 → 確定性查表)
 │
 ├── 渲染層
-│   ├── 句子視圖 (HStack + wrap layout)
-│   ├── 聲調染色 (Color map from tone enum)
-│   ├── 拼讀卡片 (Sheet or inline expand)
-│   └── 學習模式 (VStack card stack)
+│   ├── 句子視圖 (Wrap layout)
+│   ├── 聲調染色 (ToneType enum → Color)
+│   ├── 聲調圖例 (五線譜 + 趙元任五度標記 + SVG 曲線)
+│   ├── 拼讀卡片 (inline expand)
+│   └── 學習模式 (card stack layout)
 │
 └── 音頻層
-    └── AVSpeechSynthesizer (th-TH)
+    └── flutter_tts (th-TH, 0.85x speed)
 ```
 
 ---
@@ -297,3 +303,6 @@ iOS App (SwiftUI)
 - 語速控制滑桿
 - 分享功能（將分析結果截圖或輸出為圖片）
 - 後端 Key Proxy（為公開版本準備）
+- 借詞高亮（標注來自中文/英語/巴利-梵語的外來詞，幫助中文母語者辨識已知詞彙）
+- 量詞標注（泰語量詞系統標記，對照中文量詞）
+- 語序相同提示（標注中泰語序一致的句型結構，強化中文母語者的優勢感知）

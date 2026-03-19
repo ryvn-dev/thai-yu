@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>泰語聲調圖 — KhaoJai</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&family=Noto+Serif+Thai:wght@300;400&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #F5F2EC;
+            --surface: #FDFAF5;
+            --surface-2: #EDE9E1;
+            --border: rgba(60, 50, 30, 0.12);
+            --border-2: rgba(60, 50, 30, 0.22);
+            --ink: #1C1812;
+            --ink-2: #5C5446;
+            --ink-3: #9C9282;
+            --r: 10px;
+            --r-lg: 16px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #18160F;
+                --surface: #201E16;
+                --surface-2: #2A271E;
+                --border: rgba(255, 240, 200, 0.10);
+                --border-2: rgba(255, 240, 200, 0.20);
+                --ink: #EDE8DC;
+                --ink-2: #A09880;
+                --ink-3: #605848;
+            }
+        }
+
+        body {
+            background: var(--bg);
+            font-family: 'DM Sans', sans-serif;
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 48px 20px 80px;
+        }
+
+        header {
+            width: 100%;
+            max-width: 480px;
+            margin-bottom: 32px;
+        }
+
+        .logo-th {
+            font-family: 'Noto Serif Thai', serif;
+            font-size: 12px;
+            font-weight: 300;
+            color: var(--ink-3);
+            letter-spacing: 0.1em;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 500;
+            letter-spacing: -0.03em;
+            color: var(--ink);
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: var(--ink-3);
+            margin-top: 6px;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 20px 16px 16px;
+        }
+
+        .tg {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .tc {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            border-radius: 10px;
+            padding: 10px 4px 8px;
+            border: 1.5px solid transparent;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .tc:hover {
+            background: var(--surface-2);
+        }
+
+        .tc.on {
+            border-color: var(--c);
+            background: var(--b);
+        }
+
+        .tc-name {
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .tc-thai {
+            font-size: 10px;
+            color: var(--ink-3);
+            text-align: center;
+            font-family: 'Noto Serif Thai', serif;
+        }
+
+        .tc-num {
+            font-size: 10px;
+            font-family: 'DM Mono', monospace;
+            color: var(--ink-3);
+        }
+
+        .dp {
+            margin-top: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border-2);
+            border-radius: var(--r-lg);
+            overflow: hidden;
+            animation: fi 0.15s ease;
+        }
+
+        @keyframes fi {
+            from {
+                opacity: 0;
+                transform: translateY(-3px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dp-head {
+            padding: 14px 18px 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dp-title {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .dp-sym {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            background: var(--surface-2);
+            border-radius: 4px;
+            padding: 2px 8px;
+            color: var(--ink-2);
+        }
+
+        .dp-chao {
+            font-size: 11px;
+            color: var(--ink-3);
+            margin-left: auto;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .dp-body {
+            padding: 14px 18px 18px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .dp-rows {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .dp-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .dp-lbl {
+            font-size: 11px;
+            color: var(--ink-3);
+            min-width: 48px;
+            padding-top: 1px;
+            flex-shrink: 0;
+        }
+
+        .dp-val {
+            color: var(--ink);
+            line-height: 1.55;
+        }
+
+        .staff-wrap {
+            flex-shrink: 0;
+        }
+
+        .hint {
+            margin-top: 16px;
+            font-size: 11px;
+            color: var(--ink-3);
+            line-height: 1.7;
+            text-align: center;
+        }
+
+        .empty-hint {
+            margin-top: 16px;
+            padding: 20px;
+            text-align: center;
+            border: 1px dashed var(--border-2);
+            border-radius: var(--r);
+            font-size: 13px;
+            color: var(--ink-3);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <span class="logo-th">เข้าใจ</span>
+        <h1>泰語聲調對照</h1>
+        <p class="subtitle">五個聲調的音高走勢 — 對照普通話與粵語的聲學記憶</p>
+    </header>
+
+    <div class="container">
+        <div class="tg" id="tg"></div>
+        <div id="dp"></div>
+        <p class="hint">格子共五級（1最低 → 5最高）· 曲線形狀 = 發音時音高的實際走勢 · 數字為趙元任五度標記</p>
+    </div>
+
+    <script>
+        const T5 = [
+            {
+                key: 'mid', name: '中平', thai: 'สามัญ', sym: '（無符號）', chao: '33',
+                c: '#6B6965', b: 'rgba(107,105,101,0.10)',
+                path: 'M 12 38 L 68 38',
+                feel: '全程在中間，不動',
+                memory: '像唸「嗯」，平靜，無起伏',
+                mandarin: '最像普通話一聲，但音高略低於最高點',
+                cantonese: '近粵語陰平（第一聲）的音高位置',
+                example: 'กิน（kin，吃）',
+            },
+            {
+                key: 'low', name: '低沉', thai: 'เอก', sym: '่', chao: '21',
+                c: '#1E5E96', b: 'rgba(30,94,150,0.10)',
+                path: 'M 12 53 L 68 65',
+                feel: '全程壓低，稍微再沉一點',
+                memory: '像嘆氣說「唉」，沉，沒有反彈',
+                mandarin: '像普通話三聲起頭那段低沉的部分，但不回升',
+                cantonese: '近粵語陽去（第六聲），沉而短促',
+                example: 'ไป（bpai，去）',
+            },
+            {
+                key: 'fall', name: '急降', thai: 'โท', sym: '้', chao: '41',
+                c: '#A02828', b: 'rgba(160,40,40,0.10)',
+                path: 'M 12 18 C 28 18 52 58 68 70',
+                feel: '從高位急速摔落到最低點',
+                memory: '像用力說「不！」，從頭衝下來',
+                mandarin: '非常接近普通話四聲，但起點更高、落差更大',
+                cantonese: '近粵語陰去（第三聲），但下滑幅度更猛',
+                example: 'ข้าว（khâo，飯）、ชอบ（chôp，喜歡）',
+            },
+            {
+                key: 'high', name: '高揚', thai: 'ตรี', sym: '๊', chao: '45',
+                c: '#9A6310', b: 'rgba(154,99,16,0.10)',
+                path: 'M 12 28 C 30 26 52 14 68 10',
+                feel: '從中高位繼續往上爬，停在最高點',
+                memory: '像確認地問「真的？」，音往上頂',
+                mandarin: '近普通話二聲，但起點更高，升幅更平緩',
+                cantonese: '近粵語陰上（第二聲），高而緊',
+                example: 'สาม（sǎam，三）',
+            },
+            {
+                key: 'rise', name: '低升', thai: 'จัตวา', sym: '๋', chao: '214',
+                c: '#2D6030', b: 'rgba(45,96,48,0.10)',
+                path: 'M 12 48 C 22 58 38 65 50 52 C 57 44 62 28 68 16',
+                feel: '先往低谷沉，再大幅回升到高點',
+                memory: '像帶點撒嬌說「哦～」，先低再拉高',
+                mandarin: '非常接近普通話三聲的完整形狀（低谷再回升）',
+                cantonese: '近粵語陽上（第四聲），但谷底更深',
+                example: 'ฉัน（chǎn，我）',
+            },
+        ];
+
+        function staff(tone, w, h) {
+            const levels = [0.12, 0.30, 0.50, 0.70, 0.88];
+            const lines = levels.map((r, i) =>
+                `<line x1="8" y1="${(h * r).toFixed(1)}" x2="${w - 8}" y2="${(h * r).toFixed(1)}"
+      stroke="var(--border-2)" stroke-width="${i === 2 ? '0.8' : '0.5'}"
+      stroke-dasharray="${i === 2 ? '' : '4 3'}"/>`
+            ).join('');
+
+            const nums = tone.path.match(/[-\d.]+/g).map(Number);
+            const ex = nums[nums.length - 2];
+            const ey = nums[nums.length - 1];
+
+            return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block">
+    ${lines}
+    <path d="${tone.path}" fill="none" stroke="${tone.c}" stroke-width="2.5"
+      stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${ex}" cy="${ey}" r="3.5" fill="${tone.c}"/>
+  </svg>`;
+        }
+
+        let active = null;
+
+        function renderGrid() {
+            document.getElementById('tg').innerHTML = T5.map(t =>
+                `<div class="tc${active === t.key ? ' on' : ''}"
+      style="--c:${t.c};--b:${t.b}"
+      onclick="sel('${t.key}')">
+      ${staff(t, 72, 68)}
+      <span class="tc-name" style="color:${t.c}">${t.name}</span>
+      <span class="tc-thai">${t.thai}</span>
+      <span class="tc-num">${t.chao}</span>
+    </div>`
+            ).join('');
+        }
+
+        function renderDetail() {
+            const el = document.getElementById('dp');
+            if (!active) {
+                el.innerHTML = '<div class="empty-hint">點擊上方任一聲調，查看普通話 / 粵語對照說明</div>';
+                return;
+            }
+            const t = T5.find(x => x.key === active);
+            el.innerHTML = `<div class="dp">
+    <div class="dp-head">
+      <span class="dp-title" style="color:${t.c}">${t.name}</span>
+      <span class="dp-sym">${t.sym}</span>
+      <span class="dp-chao">五度值 ${t.chao}</span>
+    </div>
+    <div class="dp-body">
+      <div class="dp-rows">
+        <div class="dp-row">
+          <span class="dp-lbl">聽感</span>
+          <span class="dp-val">${t.feel}</span>
+        </div>
+        <div class="dp-row">
+          <span class="dp-lbl">記憶法</span>
+          <span class="dp-val" style="color:${t.c};font-weight:500">${t.memory}</span>
+        </div>
+        <div class="dp-row">
+          <span class="dp-lbl">普通話</span>
+          <span class="dp-val">${t.mandarin}</span>
+        </div>
+        <div class="dp-row">
+          <span class="dp-lbl">粵語</span>
+          <span class="dp-val">${t.cantonese}</span>
+        </div>
+        <div class="dp-row">
+          <span class="dp-lbl">例詞</span>
+          <span class="dp-val" style="color:${t.c};font-weight:500">${t.example}</span>
+        </div>
+      </div>
+      <div class="staff-wrap">${staff(t, 110, 100)}</div>
+    </div>
+  </div>`;
+        }
+
+        function sel(k) {
+            active = active === k ? null : k;
+            renderGrid();
+            renderDetail();
+        }
+
+        renderGrid();
+        renderDetail();
+    </script>
+</body>
+
+</html>
