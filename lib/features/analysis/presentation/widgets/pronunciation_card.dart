@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../../../../data/datasources/tts_service.dart';
+import '../../../../data/models/thai_glosses.dart';
 import '../../../../data/models/tone_type.dart';
 import '../../../../data/models/word_block.dart';
 import 'tone_curve_painter.dart';
@@ -14,18 +15,28 @@ void showPronunciationSheet(BuildContext context, WordBlock word) {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => DraggableScrollableSheet(
-      initialChildSize: 0.35,
-      minChildSize: 0.2,
-      maxChildSize: 0.85,
-      builder: (context, scrollController) => DecoratedBox(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: SingleChildScrollView(
-          controller: scrollController,
-          child: PronunciationCard(word: word),
+    builder: (context) => GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => Navigator.pop(context),
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.35,
+        minChildSize: 0.1,
+        maxChildSize: 0.85,
+        snap: true,
+        snapSizes: const [0.35, 0.6, 0.85],
+        builder: (context, scrollController) => GestureDetector(
+          onTap: () {}, // prevent tap-through to dismiss
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius:
+                  BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: SingleChildScrollView(
+              controller: scrollController,
+              child: PronunciationCard(word: word),
+            ),
+          ),
         ),
       ),
     ),
@@ -120,62 +131,81 @@ class PronunciationCard extends ConsumerWidget {
         syl.originalThai.isNotEmpty ? syl.originalThai : syl.thai;
     final showPron = origThai != syl.thai; // pronunciate differs
 
+    // Sub-word gloss: show if this syllable is independently meaningful
+    final sylGloss = ThaiGlosses.lookup(origThai);
+    final showSylGloss =
+        sylGloss != '…' && sylGloss != word.gloss && word.tones.length > 1;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Syllable header: original + rtgs + badges (pronunciate, ห นำ, 隱含元音)
+        // Syllable header: original + rtgs + badges ... gloss (right-aligned)
         Container(
           padding: const EdgeInsets.fromLTRB(18, 10, 18, 6),
-          child: Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 5,
-            runSpacing: 4,
+          child: Row(
             children: [
-              // Original spelling
-              Text(
-                origThai,
-                style: AppTextStyles.thaiPhoneme.copyWith(
-                  color: sylTone.color,
-                  fontSize: 16,
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 5,
+                  runSpacing: 4,
+                  children: [
+                    // Original spelling
+                    Text(
+                      origThai,
+                      style: AppTextStyles.thaiPhoneme.copyWith(
+                        color: sylTone.color,
+                        fontSize: 16,
+                      ),
+                    ),
+                    // Pronunciation in parentheses (if different)
+                    if (showPron)
+                      Text(
+                        '(${syl.thai})',
+                        style:
+                            const TextStyle(fontSize: 12, color: AppColors.ink3),
+                      ),
+                    Text(
+                      syl.rtgs,
+                      style: AppTextStyles.mono.copyWith(color: AppColors.ink3),
+                    ),
+                    // Badges: flags + tone
+                    if (syl.isHoNam)
+                      _badge('ห นำ', AppColors.toneLow, AppColors.toneLowBg),
+                    if (syl.hasImplicitVowel)
+                      _badge(
+                          '隱含元音', AppColors.toneHigh, AppColors.toneHighBg),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 10,
+                          child: CustomPaint(
+                            painter: ToneCurvePainter(
+                                tone: sylTone, strokeWidth: 1.2),
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          sylTone.label,
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: sylTone.color,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              // Pronunciation in parentheses (if different)
-              if (showPron)
+              // Sub-word gloss (right-aligned)
+              if (showSylGloss)
                 Text(
-                  '(${syl.thai})',
+                  sylGloss,
                   style: const TextStyle(fontSize: 12, color: AppColors.ink3),
                 ),
-              Text(
-                syl.rtgs,
-                style: AppTextStyles.mono.copyWith(color: AppColors.ink3),
-              ),
-              // Badges: flags + tone
-              if (syl.isHoNam)
-                _badge('ห นำ', AppColors.toneLow, AppColors.toneLowBg),
-              if (syl.hasImplicitVowel)
-                _badge('隱含元音', AppColors.toneHigh, AppColors.toneHighBg),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 16,
-                    height: 10,
-                    child: CustomPaint(
-                      painter:
-                          ToneCurvePainter(tone: sylTone, strokeWidth: 1.2),
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  Text(
-                    sylTone.label,
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: sylTone.color,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),

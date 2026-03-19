@@ -5,6 +5,7 @@ import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../../../../data/datasources/tts_service.dart';
 import '../../../../data/models/thai_font.dart';
+import '../../../../data/models/thai_glosses.dart';
 import '../../../../data/models/tone_type.dart';
 import '../../../../data/models/word_block.dart';
 import '../../application/analysis_controller.dart';
@@ -99,64 +100,80 @@ class LearnModeView extends ConsumerWidget {
                     ? syl.originalThai
                     : syl.thai;
                 final showPron = origThai != syl.thai;
+                final sylGloss = ThaiGlosses.lookup(origThai);
+                final showSylGloss = sylGloss != '…' &&
+                    sylGloss != word.gloss &&
+                    word.tones.length > 1;
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Syllable header with badges
+                    // Syllable header with badges + gloss right-aligned
                     Container(
                       padding: const EdgeInsets.fromLTRB(18, 8, 18, 4),
-                      child: Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 5,
-                        runSpacing: 4,
+                      child: Row(
                         children: [
-                          Text(
-                            origThai,
-                            style: AppTextStyles.thaiPhoneme.copyWith(
-                              color: sylTone.color,
-                              fontSize: 16,
+                          Expanded(
+                            child: Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 5,
+                              runSpacing: 4,
+                              children: [
+                                Text(
+                                  origThai,
+                                  style: AppTextStyles.thaiPhoneme.copyWith(
+                                    color: sylTone.color,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                if (showPron)
+                                  Text(
+                                    '(${syl.thai})',
+                                    style: const TextStyle(
+                                        fontSize: 12, color: AppColors.ink3),
+                                  ),
+                                Text(
+                                  syl.rtgs,
+                                  style: AppTextStyles.mono
+                                      .copyWith(color: AppColors.ink3),
+                                ),
+                                if (syl.isHoNam)
+                                  _badge('ห นำ', AppColors.toneLow,
+                                      AppColors.toneLowBg),
+                                if (syl.hasImplicitVowel)
+                                  _badge('隱含元音', AppColors.toneHigh,
+                                      AppColors.toneHighBg),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 16,
+                                      height: 10,
+                                      child: CustomPaint(
+                                        painter: ToneCurvePainter(
+                                            tone: sylTone, strokeWidth: 1.2),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      sylTone.label,
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: sylTone.color,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          if (showPron)
+                          if (showSylGloss)
                             Text(
-                              '(${syl.thai})',
+                              sylGloss,
                               style: const TextStyle(
                                   fontSize: 12, color: AppColors.ink3),
                             ),
-                          Text(
-                            syl.rtgs,
-                            style: AppTextStyles.mono
-                                .copyWith(color: AppColors.ink3),
-                          ),
-                          if (syl.isHoNam)
-                            _badge(
-                                'ห นำ', AppColors.toneLow, AppColors.toneLowBg),
-                          if (syl.hasImplicitVowel)
-                            _badge('隱含元音', AppColors.toneHigh,
-                                AppColors.toneHighBg),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 16,
-                                height: 10,
-                                child: CustomPaint(
-                                  painter: ToneCurvePainter(
-                                      tone: sylTone, strokeWidth: 1.2),
-                                ),
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                sylTone.label,
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  color: sylTone.color,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ),
