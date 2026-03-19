@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KhaoJai — Thai Reader Mockup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@300;400;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #F5F2EC;
+            --surface: #FDFAF5;
+            --surface-2: #EDE9E1;
+            --border: rgba(60, 50, 30, 0.12);
+            --border-2: rgba(60, 50, 30, 0.22);
+            --ink: #1C1812;
+            --ink-2: #5C5446;
+            --ink-3: #9C9282;
+            --accent: #C4561A;
+
+            --tone-mid: #7A7770;
+            --tone-low: #2E6FA3;
+            --tone-fall: #B83232;
+            --tone-high: #B07010;
+            --tone-rise: #3A7040;
+
+            --tone-mid-bg: #EEECE8;
+            --tone-low-bg: #E2EEF7;
+            --tone-fall-bg: #F7E6E6;
+            --tone-high-bg: #F7EDD8;
+            --tone-rise-bg: #E6F0E6;
+
+            --r: 10px;
+            --r-lg: 16px;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: 'DM Sans', sans-serif;
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px 80px;
+        }
+
+        /* ── Header ─────────────────────────────────── */
+        .app-header {
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 0 28px;
+        }
+
+        .app-logo {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .app-logo-th {
+            font-family: 'Noto Serif Thai', serif;
+            font-size: 13px;
+            font-weight: 300;
+            color: var(--ink-3);
+            letter-spacing: 0.08em;
+        }
+
+        .app-logo-name {
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: -0.03em;
+            color: var(--ink);
+        }
+
+        .learn-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--ink-2);
+            font-weight: 400;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-track {
+            width: 36px;
+            height: 20px;
+            border-radius: 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--border-2);
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .toggle-track.on {
+            background: var(--ink);
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: white;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-track.on .toggle-knob {
+            transform: translateX(16px);
+        }
+
+        /* ── Input area ──────────────────────────────── */
+        .input-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .input-label {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+            margin-bottom: 10px;
+        }
+
+        .input-text {
+            font-family: 'Noto Serif Thai', serif;
+            font-size: 22px;
+            font-weight: 300;
+            line-height: 1.7;
+            color: var(--ink);
+            width: 100%;
+            border: none;
+            background: transparent;
+            outline: none;
+            resize: none;
+            min-height: 72px;
+        }
+
+        .input-text::placeholder {
+            color: var(--ink-3);
+            font-size: 18px;
+        }
+
+        .analyze-btn {
+            position: absolute;
+            bottom: 14px;
+            right: 14px;
+            background: var(--ink);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.1s;
+            letter-spacing: 0.01em;
+        }
+
+        .analyze-btn:hover {
+            opacity: 0.85;
+        }
+
+        .analyze-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* ── Tone legend ─────────────────────────────── */
+        .legend-row {
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .legend-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 400;
+            border: 1px solid transparent;
+            cursor: default;
+        }
+
+        .legend-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        /* ── Result panel ────────────────────────────── */
+        .result-panel {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        /* Normal mode: horizontal word row */
+        .sentence-view {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 24px 20px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 4px;
+            align-items: flex-end;
+            margin-bottom: 12px;
+        }
+
+        .word-chip {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px 6px;
+            border-radius: var(--r);
+            cursor: pointer;
+            border: 1.5px solid transparent;
+            transition: background 0.12s, border-color 0.12s;
+            min-width: 52px;
+            position: relative;
+        }
+
+        .word-chip:hover {
+            background: var(--surface-2);
+        }
+
+        .word-chip.active {
+            border-color: var(--active-color);
+            background: var(--active-bg);
+        }
+
+        .word-thai {
+            font-family: 'Noto Serif Thai', serif;
+            font-size: 30px;
+            font-weight: 400;
+            line-height: 1.2;
+        }
+
+        .word-roman {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--ink-2);
+            margin-top: 3px;
+            letter-spacing: 0.02em;
+        }
+
+        .word-gloss {
+            font-size: 11px;
+            color: var(--ink-3);
+            margin-top: 1px;
+        }
+
+        /* Learn mode: card stack */
+        .learn-view {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .learn-view.visible {
+            display: flex;
+        }
+
+        .learn-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            overflow: hidden;
+        }
+
+        .learn-card-header {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .learn-thai {
+            font-family: 'Noto Serif Thai', serif;
+            font-size: 34px;
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .learn-roman {
+            font-family: 'DM Mono', monospace;
+            font-size: 14px;
+            color: var(--ink-2);
+        }
+
+        .learn-gloss {
+            font-size: 13px;
+            color: var(--ink-3);
+            margin-left: auto;
+        }
+
+        .learn-parts {
+            padding: 12px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .learn-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .learn-row-label {
+            width: 32px;
+            font-size: 11px;
+            color: var(--ink-3);
+            flex-shrink: 0;
+        }
+
+        .learn-row-char {
+            font-family: 'Noto Serif Thai', serif;
+            font-size: 20px;
+            font-weight: 400;
+            line-height: 1;
+            margin-right: 2px;
+        }
+
+        .learn-row-arrow {
+            color: var(--ink-3);
+            font-size: 12px;
+        }
+
+        .learn-row-sound {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            background: var(--surface-2);
+            border-radius: 4px;
+            padding: 1px 7px;
+            color: var(--ink);
+        }
+
+        .learn-row-zh {
+            font-size: 12px;
+            color: var(--ink-2);
+        }
+
+        .silent-tag {
+            font-size: 10px;
+            color: var(--ink-3);
+            font-style: italic;
+            margin-left: 4px;
+        }
+
+        .learn-tone-row {
+            padding: 10px 18px 14px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tone-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border-radius: 6px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .tone-reason {
+            font-size: 12px;
+            color: var(--ink-2);
+            line-height: 1.5;
+        }
+
+        /* ── Hover card (normal mode) ────────────────── */
+        .hover-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 0;
+            overflow: hidden;
+            margin-bottom: 12px;
+            animation: slideIn 0.15s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hover-card-head {
+            padding: 16px 18px 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .hover-thai {
+            font-family: 'Noto Serif Thai', serif;
+            font-size: 36px;
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .hover-roman {
+            font-family: 'DM Mono', monospace;
+            font-size: 15px;
+            color: var(--ink-2);
+        }
+
+        .hover-gloss {
+            font-size: 13px;
+            color: var(--ink-3);
+            margin-left: auto;
+        }
+
+        .hover-parts {
+            padding: 12px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .hover-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .hover-label {
+            width: 32px;
+            font-size: 11px;
+            color: var(--ink-3);
+            flex-shrink: 0;
+        }
+
+        .hover-char {
+            font-family: 'Noto Serif Thai', serif;
+            font-size: 22px;
+            font-weight: 400;
+            line-height: 1;
+            margin-right: 2px;
+        }
+
+        .hover-arr {
+            color: var(--ink-3);
+            font-size: 12px;
+        }
+
+        .hover-sound {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            background: var(--surface-2);
+            border-radius: 4px;
+            padding: 1px 7px;
+        }
+
+        .hover-zh {
+            font-size: 12px;
+            color: var(--ink-2);
+        }
+
+        .hover-tone-row {
+            padding: 10px 18px 14px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .hover-reason {
+            font-size: 12px;
+            color: var(--ink-2);
+            line-height: 1.6;
+        }
+
+        /* ── Play button ─────────────────────────────── */
+        .play-row {
+            padding: 10px 18px 14px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .play-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: 1px solid var(--border-2);
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            color: var(--ink-2);
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+
+        .play-btn:hover {
+            background: var(--surface-2);
+        }
+
+        .play-icon {
+            font-size: 14px;
+        }
+
+        .tts-note {
+            font-size: 11px;
+            color: var(--ink-3);
+            font-style: italic;
+        }
+
+        /* ── Empty state ─────────────────────────────── */
+        .empty-state {
+            width: 100%;
+            max-width: 420px;
+            background: var(--surface);
+            border: 1px dashed var(--border-2);
+            border-radius: var(--r-lg);
+            padding: 40px 24px;
+            text-align: center;
+        }
+
+        .empty-thai {
+            font-family: 'Noto Serif Thai', serif;
+            font-size: 32px;
+            font-weight: 300;
+            color: var(--ink-3);
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .empty-hint {
+            font-size: 13px;
+            color: var(--ink-3);
+            line-height: 1.6;
+        }
+
+        /* ── Section divider ─────────────────────────── */
+        .section-label {
+            width: 100%;
+            max-width: 420px;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+            margin-bottom: 10px;
+            margin-top: 24px;
+        }
+
+        /* scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-2);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <div class="app-header">
+        <div class="app-logo">
+            <span class="app-logo-th">เข้าใจ</span>
+            <span class="app-logo-name">KhaoJai</span>
+        </div>
+        <label class="learn-toggle" onclick="toggleLearnMode()">
+            <span id="learn-label">學習模式</span>
+            <div class="toggle-track" id="toggle-track">
+                <div class="toggle-knob"></div>
+            </div>
+        </label>
+    </div>
+
+    <!-- Input -->
+    <div class="input-card">
+        <div class="input-label">貼入泰文</div>
+        <textarea class="input-text" id="thai-input" placeholder="ลองพิมพ์ภาษาไทยที่นี่…" rows="3"></textarea>
+        <button class="analyze-btn" onclick="analyze()">解析 →</button>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend-row" id="legend-row">
+        <div class="legend-pill" style="background:var(--tone-mid-bg);border-color:var(--tone-mid-bg)">
+            <div class="legend-dot" style="background:var(--tone-mid)"></div>
+            <span style="color:var(--tone-mid)">中調 ─</span>
+        </div>
+        <div class="legend-pill" style="background:var(--tone-low-bg);border-color:var(--tone-low-bg)">
+            <div class="legend-dot" style="background:var(--tone-low)"></div>
+            <span style="color:var(--tone-low)">低調 ↘</span>
+        </div>
+        <div class="legend-pill" style="background:var(--tone-fall-bg);border-color:var(--tone-fall-bg)">
+            <div class="legend-dot" style="background:var(--tone-fall)"></div>
+            <span style="color:var(--tone-fall)">降調 ↘↘</span>
+        </div>
+        <div class="legend-pill" style="background:var(--tone-high-bg);border-color:var(--tone-high-bg)">
+            <div class="legend-dot" style="background:var(--tone-high)"></div>
+            <span style="color:var(--tone-high)">高調 ↗↗</span>
+        </div>
+        <div class="legend-pill" style="background:var(--tone-rise-bg);border-color:var(--tone-rise-bg)">
+            <div class="legend-dot" style="background:var(--tone-rise)"></div>
+            <span style="color:var(--tone-rise)">升調 ↗</span>
+        </div>
+    </div>
+
+    <!-- Result area -->
+    <div class="result-panel" id="result-panel">
+        <div class="empty-state" id="empty-state">
+            <span class="empty-thai">ยินดีต้อนรับ</span>
+            <p class="empty-hint">在上方貼入泰文，<br>每個詞的聲母、韻母、聲調<br>都會一一分解給你看。</p>
+        </div>
+    </div>
+
+    <script>
+        const TONES = {
+            mid: { label: '中調', arrow: '─', color: 'var(--tone-mid)', bg: 'var(--tone-mid-bg)' },
+            low: { label: '低調', arrow: '↘', color: 'var(--tone-low)', bg: 'var(--tone-low-bg)' },
+            fall: { label: '降調', arrow: '↘↘', color: 'var(--tone-fall)', bg: 'var(--tone-fall-bg)' },
+            high: { label: '高調', arrow: '↗↗', color: 'var(--tone-high)', bg: 'var(--tone-high-bg)' },
+            rise: { label: '升調', arrow: '↗', color: 'var(--tone-rise)', bg: 'var(--tone-rise-bg)' },
+        };
+
+        // Demo data — in production this comes from Claude API
+        const DEMO = [
+            {
+                thai: 'ฉัน', roman: 'chǎn', gloss: '我',
+                tone: 'rise',
+                parts: [
+                    { label: '聲母', char: 'ฉ', sound: '/ch/', zh: '像「車」的 ch-' },
+                    { label: '韻母', char: 'ั', sound: '/a/', zh: '短元音，像「啊」' },
+                    { label: '韻尾', char: 'น', sound: '/-n/', zh: '收 -n 尾', silent: false },
+                ],
+                tone_reason: 'ฉ 這個聲母自帶升調屬性 → 音往上走',
+            },
+            {
+                thai: 'ชอบ', roman: 'chôp', gloss: '喜歡',
+                tone: 'high',
+                parts: [
+                    { label: '聲母', char: 'ช', sound: '/ch/', zh: '氣流輕柔版的 ch-' },
+                    { label: '韻母', char: 'อ', sound: '/ɔː/', zh: '長元音，嘴圓，像「哦——」' },
+                    { label: '韻尾', char: 'บ', sound: '/-p/', zh: '停在嘴唇，幾乎不送氣', silent: true },
+                ],
+                tone_reason: 'ช + 閉音節 → 音飆高',
+            },
+            {
+                thai: 'กิน', roman: 'kin', gloss: '吃',
+                tone: 'mid',
+                parts: [
+                    { label: '聲母', char: 'ก', sound: '/k/', zh: '不送氣，像「格」的 k' },
+                    { label: '韻母', char: 'ิ', sound: '/i/', zh: '短元音，像「衣」' },
+                    { label: '韻尾', char: 'น', sound: '/-n/', zh: '收 -n 尾', silent: false },
+                ],
+                tone_reason: 'ก 這個聲母自帶中調屬性 → 平穩',
+            },
+            {
+                thai: 'ข้าว', roman: 'khâo', gloss: '飯',
+                tone: 'fall',
+                parts: [
+                    { label: '聲母', char: 'ข', sound: '/kh/', zh: '送氣音，像「可」的 kh-' },
+                    { label: '韻母', char: 'า', sound: '/aː/', zh: '長元音，像「啊——」' },
+                    { label: '韻尾', char: 'ว', sound: '/-o/', zh: '收尾滑音', silent: false },
+                ],
+                tone_reason: '้ 這個符號寫在這裡 → 音往下降',
+            },
+            {
+                thai: 'ผัด', roman: 'phàt', gloss: '炒',
+                tone: 'low',
+                parts: [
+                    { label: '聲母', char: 'ผ', sound: '/ph/', zh: '送氣音，像「坡」的 ph-' },
+                    { label: '韻母', char: 'ั', sound: '/a/', zh: '短元音，像「啊」' },
+                    { label: '韻尾', char: 'ด', sound: '/-t/', zh: '停在舌尖，幾乎不送氣', silent: true },
+                ],
+                tone_reason: 'ผ + 閉音節 → 音沉低',
+            },
+        ];
+
+        let learnMode = false;
+        let activeIdx = null;
+        let currentWords = [];
+
+        function toggleLearnMode() {
+            learnMode = !learnMode;
+            const track = document.getElementById('toggle-track');
+            track.classList.toggle('on', learnMode);
+            render();
+        }
+
+        function analyze() {
+            const input = document.getElementById('thai-input').value.trim();
+            currentWords = input ? DEMO : DEMO; // demo always shows
+            activeIdx = null;
+            render();
+        }
+
+        function render() {
+            const panel = document.getElementById('result-panel');
+            if (currentWords.length === 0) {
+                panel.innerHTML = `<div class="empty-state" id="empty-state">
+      <span class="empty-thai">ยินดีต้อนรับ</span>
+      <p class="empty-hint">在上方貼入泰文，<br>每個詞的聲母、韻母、聲調<br>都會一一分解給你看。</p>
+    </div>`;
+                return;
+            }
+
+            if (learnMode) {
+                renderLearnMode(panel);
+            } else {
+                renderNormalMode(panel);
+            }
+        }
+
+        function renderNormalMode(panel) {
+            // Sentence chips
+            const chips = currentWords.map((w, i) => {
+                const t = TONES[w.tone];
+                const isActive = activeIdx === i;
+                return `<div class="word-chip${isActive ? ' active' : ''}"
+      style="${isActive ? `--active-color:${t.color};--active-bg:${t.bg}` : ''}"
+      onclick="selectWord(${i})">
+      <span class="word-thai" style="color:${t.color}">${w.thai}</span>
+      <span class="word-roman">${w.roman}</span>
+      <span class="word-gloss">${w.gloss}</span>
+    </div>`;
+            }).join('');
+
+            let html = `<div class="sentence-view">${chips}</div>`;
+
+            // Hover card
+            if (activeIdx !== null) {
+                const w = currentWords[activeIdx];
+                const t = TONES[w.tone];
+                const partsHtml = w.parts.map(p => `
+      <div class="hover-row">
+        <span class="hover-label">${p.label}</span>
+        <span class="hover-char" style="color:${t.color}">${p.char}</span>
+        <span class="hover-arr">→</span>
+        <span class="hover-sound">${p.sound}</span>
+        <span class="hover-zh">${p.zh}</span>
+        ${p.silent ? '<span class="silent-tag">（不送氣）</span>' : ''}
+      </div>`).join('');
+
+                html += `<div class="hover-card">
+      <div class="hover-card-head">
+        <span class="hover-thai" style="color:${t.color}">${w.thai}</span>
+        <span class="hover-roman">${w.roman}</span>
+        <span class="hover-gloss">${w.gloss}</span>
+      </div>
+      <div class="hover-parts">${partsHtml}</div>
+      <div class="hover-tone-row">
+        <div class="tone-badge" style="background:${t.bg};color:${t.color}">
+          ${t.arrow} ${t.label}
+        </div>
+        <div class="hover-reason">${w.tone_reason}</div>
+      </div>
+      <div class="play-row">
+        <button class="play-btn" onclick="speak('${w.thai}')">
+          <span class="play-icon">▶</span> 播放
+        </button>
+        <span class="tts-note">TTS 合成音 · 聲調僅供參考</span>
+      </div>
+    </div>`;
+            }
+
+            panel.innerHTML = html;
+        }
+
+        function renderLearnMode(panel) {
+            const cards = currentWords.map((w, i) => {
+                const t = TONES[w.tone];
+                const partsHtml = w.parts.map(p => `
+      <div class="learn-row">
+        <span class="learn-row-label">${p.label}</span>
+        <span class="learn-row-char" style="color:${t.color}">${p.char}</span>
+        <span class="learn-row-arrow">→</span>
+        <span class="learn-row-sound">${p.sound}</span>
+        <span class="learn-row-zh">${p.zh}</span>
+        ${p.silent ? '<span class="silent-tag">（不送氣）</span>' : ''}
+      </div>`).join('');
+
+                return `<div class="learn-card">
+      <div class="learn-card-header">
+        <span class="learn-thai" style="color:${t.color}">${w.thai}</span>
+        <span class="learn-roman">${w.roman}</span>
+        <span class="learn-gloss">${w.gloss}</span>
+      </div>
+      <div class="learn-parts">${partsHtml}</div>
+      <div class="learn-tone-row">
+        <div class="tone-badge" style="background:${t.bg};color:${t.color}">
+          ${t.arrow} ${t.label}
+        </div>
+        <div class="tone-reason">${w.tone_reason}</div>
+      </div>
+    </div>`;
+            }).join('');
+
+            panel.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">${cards}</div>`;
+        }
+
+        function selectWord(i) {
+            activeIdx = activeIdx === i ? null : i;
+            if (!learnMode) render();
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'th-TH';
+                speechSynthesis.speak(u);
+            }
+        }
+
+        // Load demo on start
+        currentWords = DEMO;
+        render();
+    </script>
+</body>
+
+</html>
