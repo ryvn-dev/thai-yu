@@ -1,0 +1,980 @@
+"""
+從 kaikki.org (English Wiktionary) 提取泰語詞彙，
+結合英文釋義自動翻譯為中文，合併手動釋義，輸出 JSON。
+
+用法: uv run python scripts/build_glosses.py
+"""
+import gzip
+import json
+import re
+import sys
+import urllib.request
+from pathlib import Path
+
+CACHE_DIR = Path(__file__).resolve().parent.parent / ".cache"
+ASSETS_DIR = Path(__file__).resolve().parent.parent.parent / "assets" / "data"
+EXISTING_JSON = ASSETS_DIR / "thai_zh_glosses.json"
+
+TH_URL = "https://kaikki.org/dictionary/Thai/kaikki.org-dictionary-Thai.jsonl.gz"
+
+# ── 高品質英→中映射表 ──────────────────────────────────────────
+# 只收常見的 dictionary gloss 用詞，優先短釋義
+EN_ZH_MAP: dict[str, str] = {
+    # ── 基礎動詞 ──
+    "eat": "吃", "drink": "喝", "sleep": "睡", "wake": "醒",
+    "go": "去", "come": "來", "walk": "走", "run": "跑",
+    "stand": "站", "sit": "坐", "lie": "躺", "fly": "飛",
+    "swim": "游泳", "climb": "爬", "jump": "跳", "fall": "掉落",
+    "drive": "駕駛", "ride": "騎", "carry": "搬/帶",
+    "give": "給", "take": "拿", "get": "得到", "receive": "收到",
+    "send": "送", "bring": "帶來", "put": "放", "hold": "握/持",
+    "throw": "丟", "catch": "接住", "push": "推", "pull": "拉",
+    "open": "開", "close": "關", "shut": "關閉",
+    "turn": "轉", "move": "移動", "stop": "停", "start": "開始",
+    "begin": "開始", "finish": "完成", "end": "結束", "continue": "繼續",
+    "make": "做/製造", "do": "做", "build": "建造", "create": "創造",
+    "fix": "修理", "break": "打破", "cut": "切", "tear": "撕",
+    "tie": "綁", "wrap": "包",
+    "buy": "買", "sell": "賣", "pay": "付", "cost": "花費",
+    "spend": "花費", "save": "儲蓄/救", "borrow": "借入", "lend": "借出",
+    "steal": "偷", "rob": "搶",
+    "say": "說", "speak": "講", "talk": "談", "tell": "告訴",
+    "ask": "問", "answer": "回答", "call": "叫/打電話",
+    "shout": "喊", "whisper": "耳語", "sing": "唱",
+    "cry": "哭", "laugh": "笑", "smile": "微笑",
+    "read": "讀", "write": "寫", "draw": "畫", "paint": "畫/漆",
+    "count": "數", "calculate": "計算", "measure": "測量",
+    "see": "看見", "look": "看", "watch": "觀看", "stare": "盯",
+    "hear": "聽見", "listen": "聽", "smell": "聞", "taste": "嚐",
+    "touch": "摸", "feel": "感覺",
+    "think": "想", "know": "知道", "understand": "理解",
+    "believe": "相信", "doubt": "懷疑", "guess": "猜",
+    "remember": "記得", "forget": "忘記", "learn": "學",
+    "teach": "教", "study": "學習", "practice": "練習",
+    "try": "嘗試", "test": "測試", "check": "檢查",
+    "choose": "選擇", "decide": "決定", "plan": "計劃",
+    "want": "想要", "need": "需要", "wish": "希望",
+    "like": "喜歡", "love": "愛", "hate": "恨", "fear": "怕",
+    "hope": "希望", "expect": "期待", "wait": "等",
+    "help": "幫助", "serve": "服務", "protect": "保護",
+    "attack": "攻擊", "fight": "打架", "hit": "打",
+    "kill": "殺", "die": "死", "live": "活/住",
+    "born": "出生", "grow": "成長", "age": "老化",
+    "work": "工作", "play": "玩", "rest": "休息",
+    "cook": "煮", "boil": "煮沸", "fry": "炸", "bake": "烘焙",
+    "roast": "烤", "grill": "烤", "steam": "蒸", "stir-fry": "炒",
+    "wash": "洗", "clean": "清潔", "dry": "晾乾",
+    "wear": "穿", "dress": "穿衣",
+    "enter": "進入", "exit": "離開", "leave": "離開", "arrive": "到達",
+    "return": "回來", "visit": "拜訪", "travel": "旅行",
+    "change": "改變", "exchange": "交換", "replace": "替換",
+    "mix": "混合", "separate": "分開", "divide": "分割",
+    "add": "加", "remove": "移除", "increase": "增加", "decrease": "減少",
+    "raise": "舉起/養", "lower": "降低", "lift": "舉起",
+    "show": "展示", "hide": "隱藏", "reveal": "揭示",
+    "find": "找到", "search": "搜尋", "discover": "發現", "lose": "失去",
+    "win": "贏", "defeat": "打敗",
+    "invite": "邀請", "welcome": "歡迎", "greet": "問候",
+    "thank": "感謝", "apologize": "道歉", "excuse": "原諒",
+    "agree": "同意", "refuse": "拒絕", "accept": "接受", "reject": "拒絕",
+    "promise": "承諾", "swear": "發誓",
+    "marry": "結婚", "divorce": "離婚",
+    "happen": "發生", "appear": "出現", "disappear": "消失",
+    "exist": "存在", "become": "變成", "remain": "保持",
+    "belong": "屬於", "contain": "包含", "include": "包括",
+    "depend": "依靠", "compare": "比較", "differ": "不同",
+    "succeed": "成功", "fail": "失敗",
+    "allow": "允許", "forbid": "禁止", "prevent": "阻止",
+    "force": "強迫", "order": "命令", "obey": "服從",
+    "follow": "跟隨", "lead": "領導", "guide": "引導",
+    "support": "支持", "oppose": "反對",
+    "collect": "收集", "gather": "聚集", "spread": "散播",
+    "plant": "種植", "harvest": "收穫", "dig": "挖",
+    "pour": "倒", "fill": "填滿", "empty": "倒空",
+    "burn": "燃燒", "melt": "融化", "freeze": "結冰",
+    "blow": "吹", "flow": "流", "float": "漂浮", "sink": "沉",
+    "hang": "掛", "stick": "黏",
+    "bite": "咬", "chew": "嚼", "swallow": "吞", "spit": "吐",
+    "breathe": "呼吸", "cough": "咳嗽", "sneeze": "打噴嚏",
+    "pray": "祈禱", "worship": "崇拜", "bless": "祝福",
+    "celebrate": "慶祝", "mourn": "哀悼",
+    "translate": "翻譯", "interpret": "口譯",
+    "rent": "租", "hire": "雇用",
+    "arrange": "安排", "organize": "組織", "manage": "管理",
+    "announce": "宣布", "declare": "宣告", "report": "報告",
+    "describe": "描述", "explain": "解釋", "discuss": "討論",
+    "argue": "爭論", "debate": "辯論", "negotiate": "談判",
+    "compete": "競爭", "cooperate": "合作",
+    "damage": "損壞", "destroy": "毀滅", "repair": "修理",
+    "recover": "恢復", "heal": "治癒", "cure": "治療",
+    "suffer": "受苦", "endure": "忍受",
+    "punish": "懲罰", "reward": "獎賞", "fine": "罰款",
+    "arrest": "逮捕", "imprison": "監禁", "release": "釋放",
+    "vote": "投票", "elect": "選舉", "govern": "治理",
+
+    # ── 基礎名詞 ──
+    "person": "人", "people": "人們", "man": "男人", "woman": "女人",
+    "child": "小孩", "baby": "嬰兒", "boy": "男孩", "girl": "女孩",
+    "father": "爸爸", "mother": "媽媽", "parent": "父母",
+    "son": "兒子", "daughter": "女兒", "brother": "兄弟", "sister": "姊妹",
+    "husband": "丈夫", "wife": "妻子", "friend": "朋友", "enemy": "敵人",
+    "king": "國王", "queen": "女王", "prince": "王子", "princess": "公主",
+    "god": "神", "ghost": "鬼", "spirit": "靈魂", "angel": "天使", "demon": "惡魔",
+    "monk": "僧侶", "priest": "牧師",
+    "teacher": "老師", "student": "學生", "doctor": "醫生",
+    "soldier": "士兵", "police": "警察", "thief": "小偷",
+    "farmer": "農夫", "merchant": "商人", "worker": "工人",
+    "servant": "僕人", "slave": "奴隸", "master": "主人",
+    "leader": "領袖", "boss": "老闆", "officer": "軍官/官員",
+    "head": "頭", "face": "臉", "eye": "眼睛", "nose": "鼻子",
+    "mouth": "嘴", "ear": "耳朵", "tooth": "牙齒", "tongue": "舌頭",
+    "hair": "頭髮", "skin": "皮膚", "bone": "骨頭",
+    "hand": "手", "finger": "手指", "arm": "手臂",
+    "leg": "腿", "foot": "腳", "knee": "膝蓋",
+    "heart": "心", "blood": "血", "body": "身體",
+    "stomach": "胃", "back": "背", "neck": "脖子", "shoulder": "肩膀",
+    "chest": "胸", "brain": "腦",
+    "house": "房子", "home": "家", "room": "房間", "door": "門",
+    "window": "窗戶", "wall": "牆", "floor": "地板", "roof": "屋頂",
+    "bed": "床", "chair": "椅子", "table": "桌子",
+    "kitchen": "廚房", "bathroom": "浴室", "toilet": "廁所",
+    "garden": "花園", "fence": "圍欄",
+    "road": "路", "street": "街", "bridge": "橋",
+    "building": "建築物", "temple": "寺廟", "church": "教堂",
+    "school": "學校", "hospital": "醫院", "market": "市場",
+    "shop": "店", "store": "商店", "restaurant": "餐廳",
+    "hotel": "旅館", "bank": "銀行", "office": "辦公室",
+    "factory": "工廠", "prison": "監獄",
+    "city": "城市", "town": "鎮", "village": "村莊",
+    "country": "國家", "province": "省", "district": "區",
+    "island": "島", "peninsula": "半島", "continent": "大陸",
+    "water": "水", "fire": "火", "earth": "土/地球", "air": "空氣",
+    "wind": "風", "rain": "雨", "snow": "雪", "ice": "冰",
+    "cloud": "雲", "fog": "霧", "storm": "暴風雨", "flood": "洪水",
+    "sun": "太陽", "moon": "月亮", "star": "星星", "sky": "天空",
+    "mountain": "山", "hill": "丘陵", "river": "河", "lake": "湖",
+    "sea": "海", "ocean": "海洋", "beach": "海灘",
+    "forest": "森林", "tree": "樹", "flower": "花",
+    "grass": "草", "leaf": "葉子", "root": "根", "seed": "種子",
+    "fruit": "水果", "vegetable": "蔬菜",
+    "rice": "米/飯", "bread": "麵包", "noodle": "麵",
+    "meat": "肉", "fish": "魚", "chicken": "雞", "pork": "豬肉", "beef": "牛肉",
+    "egg": "蛋", "milk": "牛奶", "butter": "奶油", "cheese": "起司",
+    "salt": "鹽", "sugar": "糖", "oil": "油", "vinegar": "醋",
+    "pepper": "胡椒", "spice": "香料", "sauce": "醬",
+    "tea": "茶", "coffee": "咖啡", "beer": "啤酒", "wine": "酒",
+    "soup": "湯", "curry": "咖哩",
+    "dog": "狗", "cat": "貓", "bird": "鳥", "fish": "魚",
+    "horse": "馬", "cow": "牛", "pig": "豬", "sheep": "羊",
+    "chicken": "雞", "duck": "鴨", "snake": "蛇",
+    "elephant": "大象", "monkey": "猴子", "tiger": "老虎", "lion": "獅子",
+    "bear": "熊", "deer": "鹿", "rabbit": "兔子",
+    "rat": "老鼠", "mouse": "老鼠", "frog": "青蛙",
+    "insect": "昆蟲", "ant": "螞蟻", "mosquito": "蚊子", "butterfly": "蝴蝶",
+    "spider": "蜘蛛", "worm": "蟲",
+    "shrimp": "蝦", "crab": "螃蟹", "squid": "烏賊",
+    "car": "車", "bus": "公車", "train": "火車",
+    "boat": "船", "ship": "船", "airplane": "飛機", "bicycle": "腳踏車",
+    "wheel": "輪子", "engine": "引擎",
+    "money": "錢", "gold": "金", "silver": "銀", "coin": "硬幣",
+    "price": "價格", "profit": "利潤", "debt": "債",
+    "book": "書", "letter": "信/字母", "word": "詞", "language": "語言",
+    "name": "名字", "number": "數字",
+    "paper": "紙", "pen": "筆", "pencil": "鉛筆",
+    "picture": "圖片", "photograph": "照片", "map": "地圖",
+    "music": "音樂", "song": "歌", "dance": "舞蹈",
+    "game": "遊戲", "sport": "運動", "toy": "玩具",
+    "cloth": "布", "clothes": "衣服", "shirt": "襯衫", "pants": "褲子",
+    "shoe": "鞋", "hat": "帽子", "bag": "包/袋",
+    "ring": "戒指", "necklace": "項鏈",
+    "knife": "刀", "sword": "劍", "gun": "槍",
+    "tool": "工具", "machine": "機器", "rope": "繩子",
+    "key": "鑰匙", "lock": "鎖",
+    "medicine": "藥", "poison": "毒",
+    "time": "時間", "day": "天", "night": "夜", "morning": "早上",
+    "afternoon": "下午", "evening": "傍晚",
+    "hour": "小時", "minute": "分鐘", "second": "秒",
+    "week": "星期", "month": "月", "year": "年",
+    "season": "季節", "spring": "春天", "summer": "夏天",
+    "autumn": "秋天", "winter": "冬天",
+    "today": "今天", "tomorrow": "明天", "yesterday": "昨天",
+    "color": "顏色", "colour": "顏色",
+    "red": "紅", "blue": "藍", "green": "綠", "yellow": "黃",
+    "black": "黑", "white": "白", "brown": "棕",
+    "orange": "橙", "pink": "粉紅", "purple": "紫", "grey": "灰",
+    "north": "北", "south": "南", "east": "東", "west": "西",
+    "left": "左", "right": "右", "up": "上", "down": "下",
+    "front": "前", "behind": "後", "inside": "裡面", "outside": "外面",
+    "side": "邊",
+    "thing": "東西", "place": "地方", "way": "方法/路",
+    "part": "部分", "piece": "片/件", "group": "群/組",
+    "kind": "種類", "type": "類型", "sort": "種類",
+    "size": "大小", "shape": "形狀",
+    "power": "力量", "energy": "能量", "force": "力",
+    "sound": "聲音", "noise": "噪音", "voice": "嗓音",
+    "light": "光/燈", "shadow": "影子", "darkness": "黑暗",
+    "heat": "熱", "cold": "冷",
+    "smell": "氣味", "scent": "香味",
+    "life": "生命", "death": "死亡",
+    "health": "健康", "disease": "疾病", "illness": "病",
+    "pain": "痛", "wound": "傷口", "scar": "疤",
+    "fever": "發燒",
+    "war": "戰爭", "peace": "和平", "battle": "戰鬥",
+    "law": "法律", "rule": "規則", "right": "權利",
+    "duty": "義務", "responsibility": "責任",
+    "freedom": "自由", "justice": "正義",
+    "truth": "真理", "lie": "謊言", "secret": "秘密",
+    "news": "新聞", "story": "故事", "history": "歷史",
+    "knowledge": "知識", "education": "教育", "science": "科學",
+    "art": "藝術", "culture": "文化", "tradition": "傳統",
+    "religion": "宗教", "faith": "信仰",
+    "economy": "經濟", "trade": "貿易", "industry": "工業",
+    "technology": "技術",
+    "government": "政府", "politics": "政治",
+    "society": "社會", "community": "社區",
+    "family": "家庭", "marriage": "婚姻",
+
+    # ── 形容詞 ──
+    "good": "好", "bad": "壞", "nice": "好的/美好",
+    "beautiful": "美麗", "ugly": "醜", "pretty": "漂亮",
+    "handsome": "帥", "cute": "可愛",
+    "big": "大", "small": "小", "large": "大", "tiny": "極小",
+    "long": "長", "short": "短", "tall": "高", "low": "低",
+    "wide": "寬", "narrow": "窄", "thick": "厚", "thin": "薄/瘦",
+    "heavy": "重", "light": "輕",
+    "fast": "快", "slow": "慢", "quick": "快速",
+    "hard": "硬/難", "soft": "軟", "rough": "粗糙", "smooth": "光滑",
+    "sharp": "銳利", "dull": "鈍",
+    "hot": "熱", "cold": "冷", "warm": "溫暖", "cool": "涼爽",
+    "wet": "濕", "dry": "乾",
+    "clean": "乾淨", "dirty": "髒",
+    "new": "新", "old": "舊/老", "young": "年輕",
+    "rich": "富", "poor": "窮",
+    "strong": "強", "weak": "弱",
+    "full": "滿", "empty": "空",
+    "deep": "深", "shallow": "淺",
+    "dark": "暗", "bright": "亮",
+    "loud": "大聲", "quiet": "安靜",
+    "easy": "容易", "difficult": "難",
+    "simple": "簡單", "complex": "複雜",
+    "important": "重要", "necessary": "必要",
+    "possible": "可能", "impossible": "不可能",
+    "correct": "正確", "wrong": "錯誤",
+    "true": "真", "false": "假",
+    "safe": "安全", "dangerous": "危險",
+    "happy": "快樂", "sad": "悲傷", "angry": "生氣",
+    "afraid": "害怕", "brave": "勇敢",
+    "tired": "累", "hungry": "餓", "thirsty": "渴",
+    "sick": "生病", "healthy": "健康",
+    "alive": "活著", "dead": "死的",
+    "free": "自由/免費", "busy": "忙",
+    "lazy": "懶", "diligent": "勤勞",
+    "polite": "有禮貌", "rude": "粗魯",
+    "honest": "誠實", "kind": "善良", "cruel": "殘忍",
+    "stupid": "笨", "clever": "聰明", "wise": "智慧",
+    "famous": "有名", "popular": "受歡迎",
+    "strange": "奇怪", "normal": "正常", "special": "特別",
+    "different": "不同", "same": "相同", "similar": "相似",
+    "common": "常見", "rare": "罕見",
+    "many": "很多", "few": "少", "much": "很多",
+    "enough": "足夠", "extra": "額外",
+    "first": "第一", "last": "最後", "next": "下一",
+    "ready": "準備好",
+    "sure": "確定", "certain": "確定",
+    "sweet": "甜", "sour": "酸", "bitter": "苦", "salty": "鹹",
+    "spicy": "辣", "delicious": "好吃",
+    "fresh": "新鮮", "rotten": "腐爛",
+    "round": "圓", "flat": "平",
+    "straight": "直", "crooked": "彎曲",
+    "tight": "緊", "loose": "鬆",
+    "expensive": "貴", "cheap": "便宜",
+    "ancient": "古老", "modern": "現代",
+    "sacred": "神聖", "holy": "神聖",
+    "royal": "皇家", "noble": "高貴",
+    "main": "主要", "real": "真實", "fake": "假的",
+    "whole": "整個", "complete": "完整",
+    "lucky": "幸運", "unlucky": "不幸",
+
+    # ── 副詞/其他 ──
+    "very": "很", "really": "真的", "quite": "相當",
+    "also": "也", "too": "也/太", "already": "已經",
+    "still": "仍然", "yet": "還", "just": "剛/只",
+    "always": "總是", "never": "從不", "often": "常常",
+    "sometimes": "有時", "usually": "通常",
+    "here": "這裡", "there": "那裡", "where": "哪裡",
+    "when": "何時", "how": "如何", "why": "為什麼",
+    "what": "什麼", "who": "誰", "which": "哪個",
+    "yes": "是", "no": "不",
+    "not": "不", "all": "全部", "every": "每",
+    "some": "一些", "any": "任何", "each": "每個",
+    "only": "只", "even": "甚至", "about": "關於/大約",
+    "again": "再次", "together": "一起", "alone": "獨自",
+    "perhaps": "也許", "maybe": "也許",
+    "exactly": "確切地", "approximately": "大約",
+    "especially": "特別是", "mainly": "主要",
+
+    # ── 補充：高頻未匹配詞 ──
+    "chief": "首領", "command": "命令", "excellent": "優秀",
+    "trick": "詭計", "land": "土地", "area": "地區",
+    "monarch": "君主", "clear": "清楚", "share": "分享",
+    "cover": "覆蓋", "meet": "遇見", "wild": "野生",
+    "sphere": "球/範圍", "appearance": "外貌", "press": "壓",
+    "content": "內容/滿足", "ability": "能力", "row": "排/列",
+    "be angry": "生氣", "base": "基礎", "question": "問題",
+    "origin": "起源", "court": "法院/宮廷", "extremely": "極其",
+    "club": "俱樂部", "lunch": "午餐", "calm": "平靜",
+    "bar": "酒吧/條", "aim": "目標", "pressure": "壓力",
+    "pleasure": "快樂", "pass": "通過/經過", "guard": "守衛",
+    "bind": "綁", "fierce": "凶猛", "condition": "條件",
+    "favour": "恩惠", "bend": "彎", "style": "風格",
+    "pile up": "堆積", "progress": "進步", "manner": "方式",
+    "tease": "逗弄", "cause": "原因/導致", "line": "線/排",
+    "drill": "鑽/操練", "object": "物體", "conceal": "隱藏",
+    "repeatedly": "反覆", "firm": "堅定/公司", "delay": "延遲",
+    "join": "加入", "foolish": "愚蠢", "scold": "罵",
+    "dawn": "黎明", "world": "世界", "rock": "岩石",
+    "stab": "刺", "matter": "事情/物質", "enjoy": "享受",
+    "counter": "櫃檯", "mind": "心/心智", "desire": "慾望",
+    "edge": "邊緣", "magic": "魔法", "concept": "概念",
+    "subordinate": "下屬", "author": "作者", "inferior": "低下",
+    "medium": "中等/媒介", "sign": "標誌/簽", "copy": "複製",
+    "mark": "標記", "scratch": "抓", "arrange": "安排",
+    "complete": "完成/完整", "limit": "限制", "border": "邊界",
+    "enemy": "敵人", "companion": "同伴", "neighbor": "鄰居",
+    "guest": "客人", "host": "主人",
+    "class": "等級/班", "rank": "等級", "title": "頭銜",
+    "honor": "榮譽", "glory": "光榮", "fame": "名聲",
+    "virtue": "美德", "sin": "罪", "crime": "犯罪",
+    "punishment": "處罰", "forgiveness": "寬恕",
+    "wealth": "財富", "treasure": "寶物",
+    "luck": "運氣", "fate": "命運", "destiny": "命運",
+    "dream": "夢", "nightmare": "噩夢",
+    "ceremony": "儀式", "festival": "節日", "sacrifice": "犧牲",
+    "gift": "禮物", "reward": "獎賞",
+    "speech": "演說", "conversation": "對話",
+    "advice": "建議", "opinion": "意見", "idea": "想法",
+    "thought": "思想", "memory": "記憶", "imagination": "想像",
+    "experience": "經驗", "skill": "技能", "talent": "才能",
+    "effort": "努力", "attempt": "嘗試",
+    "success": "成功", "failure": "失敗", "result": "結果",
+    "reason": "原因/理由", "purpose": "目的",
+    "problem": "問題", "solution": "解決方案", "answer": "答案",
+    "example": "例子", "evidence": "證據", "proof": "證明",
+    "method": "方法", "process": "過程", "system": "系統",
+    "structure": "結構", "pattern": "模式",
+    "value": "價值", "quality": "品質", "standard": "標準",
+    "level": "等級", "degree": "程度/學位",
+    "amount": "數量", "total": "總計",
+    "distance": "距離", "length": "長度", "height": "高度",
+    "width": "寬度", "weight": "重量", "speed": "速度",
+    "temperature": "溫度",
+    "material": "材料", "metal": "金屬", "wood": "木材",
+    "stone": "石頭", "glass": "玻璃", "plastic": "塑膠",
+    "leather": "皮革", "cotton": "棉",
+    "iron": "鐵", "steel": "鋼", "copper": "銅", "tin": "錫",
+    "diamond": "鑽石", "pearl": "珍珠", "jade": "玉",
+    "ruby": "紅寶石", "emerald": "翡翠",
+    "oil": "油", "gas": "氣/瓦斯", "coal": "煤",
+    "dust": "灰塵", "mud": "泥", "sand": "沙",
+    "wave": "波浪", "current": "水流/電流", "tide": "潮汐",
+    "shore": "岸", "bank": "銀行/河岸", "port": "港口",
+    "canal": "運河", "dam": "水壩", "well": "井",
+    "cave": "洞穴", "cliff": "懸崖", "valley": "山谷",
+    "field": "田/場地", "farm": "農場", "crop": "農作物",
+    "grain": "穀物", "wheat": "小麥", "corn": "玉米",
+    "bean": "豆", "nut": "堅果",
+    "mango": "芒果", "banana": "香蕉", "coconut": "椰子",
+    "lemon": "檸檬", "lime": "萊姆", "grape": "葡萄",
+    "pineapple": "鳳梨", "watermelon": "西瓜", "melon": "瓜",
+    "onion": "洋蔥", "garlic": "大蒜", "ginger": "薑",
+    "mushroom": "蘑菇", "bamboo": "竹",
+    "rose": "玫瑰", "lotus": "蓮花", "orchid": "蘭花",
+    "whale": "鯨魚", "dolphin": "海豚", "shark": "鯊魚",
+    "turtle": "烏龜", "crocodile": "鱷魚", "lizard": "蜥蜴",
+    "parrot": "鸚鵡", "eagle": "老鷹", "crow": "烏鴉",
+    "owl": "貓頭鷹", "pigeon": "鴿子",
+    "bee": "蜜蜂", "fly": "蒼蠅", "cockroach": "蟑螂",
+    "scorpion": "蠍子", "snail": "蝸牛",
+    "cloth": "布", "silk": "絲", "wool": "羊毛",
+    "thread": "線", "needle": "針", "button": "鈕扣",
+    "umbrella": "傘", "mirror": "鏡子", "candle": "蠟燭",
+    "lamp": "燈", "bell": "鈴",
+    "bowl": "碗", "plate": "盤子", "cup": "杯子",
+    "pot": "鍋", "pan": "平底鍋", "spoon": "湯匙",
+    "fork": "叉子", "chopstick": "筷子",
+    "basket": "籃子", "box": "盒子", "bottle": "瓶子",
+    "bucket": "桶",
+    "flag": "旗", "stamp": "郵票/印章",
+    "ticket": "票", "passport": "護照",
+    "telephone": "電話", "radio": "收音機", "television": "電視",
+    "computer": "電腦", "internet": "網路",
+    "camera": "相機", "clock": "時鐘", "calendar": "日曆",
+    "battery": "電池",
+    "math": "數學", "geography": "地理", "chemistry": "化學",
+    "physics": "物理", "biology": "生物",
+    "philosophy": "哲學", "psychology": "心理學",
+    "literature": "文學", "poetry": "詩",
+    "painting": "繪畫", "sculpture": "雕塑",
+    "movie": "電影", "drama": "戲劇", "comedy": "喜劇",
+    "novel": "小說", "poem": "詩",
+    "anniversary": "週年", "birthday": "生日", "wedding": "婚禮",
+    "funeral": "葬禮",
+    "tax": "稅", "salary": "薪水", "income": "收入",
+    "expense": "支出", "budget": "預算",
+    "insurance": "保險", "investment": "投資",
+    "contract": "合約", "agreement": "協議",
+    "permit": "許可", "license": "執照",
+    "accident": "事故", "disaster": "災難",
+    "earthquake": "地震", "typhoon": "颱風", "drought": "乾旱",
+    "pollution": "汙染", "garbage": "垃圾",
+    "fuel": "燃料", "electricity": "電",
+    "transportation": "交通", "communication": "通訊",
+    "connection": "連接", "network": "網路",
+    "program": "程式/節目", "software": "軟體",
+    "data": "數據", "information": "資訊",
+    "measure": "測量/措施", "survey": "調查",
+    "experiment": "實驗", "research": "研究",
+    "theory": "理論", "principle": "原則",
+    "opportunity": "機會", "challenge": "挑戰",
+    "advantage": "優勢", "disadvantage": "劣勢",
+    "influence": "影響", "effect": "效果", "impact": "衝擊",
+    "situation": "情況", "circumstance": "情勢",
+    "environment": "環境", "atmosphere": "氣氛/大氣",
+    "nature": "自然", "landscape": "風景",
+    "scenery": "景色", "view": "景色/觀點",
+    "tradition": "傳統", "custom": "習俗", "habit": "習慣",
+    "belief": "信念", "principle": "原則", "moral": "道德",
+    "emotion": "情感", "feeling": "感覺", "mood": "心情",
+    "passion": "熱情", "enthusiasm": "熱忱",
+    "patience": "耐心", "courage": "勇氣",
+    "pride": "驕傲", "shame": "羞恥", "guilt": "罪惡感",
+    "jealousy": "嫉妒", "envy": "羨慕",
+    "sympathy": "同情", "pity": "憐憫", "mercy": "慈悲",
+    "respect": "尊重", "admiration": "敬佩",
+    "gratitude": "感恩", "loyalty": "忠誠",
+    "independence": "獨立", "unity": "團結",
+    "revolution": "革命", "reform": "改革",
+    "election": "選舉", "democracy": "民主",
+    "constitution": "憲法", "parliament": "議會",
+    "ministry": "部", "department": "部門",
+    "ambassador": "大使", "diplomat": "外交官",
+    "ceremony": "典禮", "ritual": "儀式",
+    "poverty": "貧困", "equality": "平等",
+    "development": "發展", "growth": "成長",
+    "manufacture": "製造", "produce": "生產",
+    "export": "出口", "import": "進口",
+    "supply": "供應", "demand": "需求",
+    "offer": "提供", "request": "請求",
+    "suggest": "建議", "recommend": "推薦",
+    "warn": "警告", "threaten": "威脅",
+    "praise": "讚美", "criticize": "批評",
+    "blame": "責備", "complain": "抱怨",
+    "encourage": "鼓勵", "inspire": "啟發",
+    "persuade": "說服", "convince": "說服",
+    "imagine": "想像", "pretend": "假裝",
+    "imitate": "模仿", "copy": "複製",
+    "invent": "發明", "design": "設計",
+    "achieve": "達成", "accomplish": "完成",
+    "improve": "改善", "develop": "發展",
+    "expand": "擴大", "extend": "延伸",
+    "reduce": "減少", "shrink": "縮小",
+    "connect": "連接", "attach": "附上",
+    "combine": "結合", "merge": "合併",
+    "absorb": "吸收", "release": "釋放",
+    "squeeze": "擠", "stretch": "伸展",
+    "spread": "散播/塗", "scatter": "散開",
+    "surround": "圍繞", "enclose": "包圍",
+    "cross": "穿越", "penetrate": "穿透",
+    "approach": "接近", "avoid": "避免",
+    "escape": "逃跑", "chase": "追",
+    "capture": "捕獲", "trap": "陷阱",
+    "observe": "觀察", "notice": "注意到",
+    "recognize": "認出", "identify": "辨認",
+    "distinguish": "區分", "compare": "比較",
+    "estimate": "估計", "evaluate": "評估",
+    "judge": "判斷", "determine": "確定",
+    "conclude": "結論", "assume": "假設",
+    "suppose": "假設", "suspect": "懷疑",
+    "confirm": "確認", "deny": "否認",
+    "admit": "承認", "confess": "坦白",
+    "forgive": "原諒", "regret": "後悔",
+    "assist": "協助", "participate": "參加",
+    "celebrate": "慶祝", "decorate": "裝飾",
+    "prepare": "準備", "adjust": "調整",
+    "operate": "操作", "maintain": "維護",
+    "establish": "建立", "found": "創立",
+    "display": "展示", "demonstrate": "示範",
+    "indicate": "指示", "represent": "代表",
+    "symbolize": "象徵", "refer": "指稱",
+    "mention": "提到", "express": "表達",
+    "communicate": "溝通", "respond": "回應",
+    "react": "反應", "resist": "抵抗",
+    "struggle": "掙扎", "overcome": "克服",
+    "survive": "生存", "adapt": "適應",
+    "transform": "轉變", "convert": "轉換",
+    "restore": "恢復", "preserve": "保存",
+    "possess": "擁有", "acquire": "獲得",
+    "donate": "捐贈", "contribute": "貢獻",
+    "distribute": "分配", "allocate": "分配",
+    "transfer": "轉移", "deliver": "遞送",
+    "launch": "發射/啟動", "promote": "推廣/晉升",
+    "publish": "出版", "broadcast": "廣播",
+    "record": "記錄", "register": "登記",
+    "apply": "申請/應用",
+    "crash": "撞擊", "collide": "碰撞",
+    "explode": "爆炸", "collapse": "崩塌",
+    "leak": "漏", "drip": "滴",
+    "shine": "發光", "glow": "發亮", "flash": "閃",
+    "reflect": "反射/反思", "absorb": "吸收",
+    "vibrate": "振動", "shake": "搖",
+    "spin": "旋轉", "rotate": "轉動", "roll": "滾",
+    "slide": "滑", "bounce": "彈跳",
+    "swell": "腫脹", "shrink": "縮小",
+    "crack": "裂", "split": "分裂",
+    "stain": "染色/汙漬", "fade": "褪色",
+    "ripen": "成熟", "bloom": "開花", "wither": "枯萎",
+    "breed": "繁殖", "hatch": "孵化",
+    "migrate": "遷移", "hibernate": "冬眠",
+    "tame": "馴服", "domesticate": "馴化",
+    "pollute": "汙染", "contaminate": "汙染",
+    "recycle": "回收", "conserve": "保護/節約",
+
+    # ── 補充：更多常見詞 ──
+    "have": "有", "has": "有", "not": "不",
+    "sexual": "性的", "intercourse": "交合",
+    "die": "死", "death": "死亡", "dead": "死的",
+    "penis": "陰莖", "vagina": "陰道", "feces": "糞便",
+    "anus": "肛門", "breast": "乳房", "buttock": "臀部",
+    "nail": "釘/指甲", "eyelid": "眼皮", "lip": "嘴唇",
+    "chin": "下巴", "cheek": "臉頰", "forehead": "額頭",
+    "elbow": "手肘", "wrist": "手腕", "ankle": "腳踝",
+    "thumb": "拇指", "palm": "手掌", "sole": "腳底",
+    "rib": "肋骨", "spine": "脊椎", "skull": "頭骨",
+    "liver": "肝", "kidney": "腎", "lung": "肺",
+    "intestine": "腸", "bladder": "膀胱", "nerve": "神經",
+    "muscle": "肌肉", "tendon": "肌腱", "joint": "關節",
+    "vein": "靜脈", "artery": "動脈",
+    "public": "公共", "private": "私人",
+    "electric": "電的", "electronic": "電子",
+    "nuclear": "核", "solar": "太陽的",
+    "military": "軍事", "civil": "民事/公民",
+    "legal": "法律的", "political": "政治的",
+    "social": "社會的", "national": "國家的",
+    "international": "國際", "foreign": "外國",
+    "traditional": "傳統的", "modern": "現代",
+    "natural": "自然的", "artificial": "人造",
+    "official": "官方", "formal": "正式",
+    "buddhist": "佛教的", "christian": "基督教的",
+    "chinese": "中國的", "thai": "泰國的",
+    "golden": "金色的", "silver": "銀色的",
+    "central": "中央", "middle": "中間",
+    "southeast": "東南", "northeast": "東北",
+    "southwest": "西南", "northwest": "西北",
+    "great": "偉大/大", "grand": "宏偉",
+    "prime": "首要/首相", "supreme": "最高",
+    "lesser": "較小的", "greater": "更大的",
+    "upper": "上面的", "lower": "下面的",
+    "inner": "內部", "outer": "外部",
+    "former": "前任", "latter": "後者",
+    "seek": "尋找", "perform": "表演/執行",
+    "commit": "犯/承諾", "engage": "從事/訂婚",
+    "undergo": "經歷", "undertake": "承擔",
+    "beat": "打/節拍", "strike": "打/罷工",
+    "scrape": "刮", "scratch": "抓/刮",
+    "crush": "壓碎", "grind": "磨",
+    "stir": "攪拌", "whip": "鞭打/攪打",
+    "scoop": "舀", "ladle": "勺子",
+    "peel": "剝皮", "slice": "切片",
+    "chop": "剁", "mince": "絞碎",
+    "brew": "釀造", "ferment": "發酵",
+    "pickle": "醃漬", "preserve": "保存/蜜餞",
+    "snare": "陷阱", "trap": "陷阱/圈套",
+    "liar": "騙子", "fool": "傻瓜",
+    "brat": "小鬼", "rascal": "流氓",
+    "skull": "頭骨",
+    "condom": "保險套",
+    "ghost": "鬼", "phantom": "幽靈",
+    "goblin": "妖精", "ogre": "食人魔",
+    "witch": "巫婆", "wizard": "巫師",
+    "fairy": "仙女", "dwarf": "矮人",
+    "dragon": "龍", "phoenix": "鳳凰",
+    "unicorn": "獨角獸",
+    "rudder": "舵", "anchor": "錨", "sail": "帆",
+    "oar": "槳", "mast": "桅杆",
+    "lighthouse": "燈塔", "harbor": "港口",
+    "fortress": "堡壘", "castle": "城堡",
+    "tower": "塔", "palace": "宮殿", "throne": "王座",
+    "dagger": "匕首", "spear": "矛", "shield": "盾",
+    "arrow": "箭", "bow": "弓", "cannon": "大炮",
+    "bomb": "炸彈", "missile": "飛彈",
+    "tank": "坦克/水箱", "radar": "雷達",
+    "satellite": "衛星", "rocket": "火箭",
+    "planet": "行星", "galaxy": "銀河", "universe": "宇宙",
+    "orbit": "軌道", "comet": "彗星",
+    "eclipse": "日/月蝕", "meteor": "流星",
+    "oxygen": "氧氣", "hydrogen": "氫",
+    "carbon": "碳", "nitrogen": "氮",
+    "acid": "酸", "alkali": "鹼",
+    "atom": "原子", "molecule": "分子",
+    "cell": "細胞", "gene": "基因", "DNA": "DNA",
+    "virus": "病毒", "bacteria": "細菌",
+    "cancer": "癌症", "diabetes": "糖尿病",
+    "allergy": "過敏", "infection": "感染",
+    "surgery": "手術", "injection": "注射",
+    "vaccine": "疫苗", "antibiotic": "抗生素",
+    "alcohol": "酒精", "tobacco": "菸草",
+    "drug": "藥物/毒品", "narcotic": "麻醉劑",
+    "marijuana": "大麻", "cocaine": "古柯鹼",
+    "opium": "鴉片", "heroin": "海洛因",
+    "prostitution": "賣淫", "prostitute": "妓女",
+    "gambling": "賭博", "lottery": "彩票",
+    "bet": "賭注", "dice": "骰子",
+    "chess": "棋", "card": "牌/卡",
+    "football": "足球", "basketball": "籃球",
+    "boxing": "拳擊", "wrestling": "摔角",
+    "martial": "武術的", "archery": "射箭",
+    "swimming": "游泳", "diving": "跳水/潛水",
+    "sailing": "帆船", "surfing": "衝浪",
+    "fishing": "釣魚", "hunting": "打獵",
+    "camping": "露營", "hiking": "健行",
+    "cooking": "烹飪", "sewing": "縫紉",
+    "knitting": "編織", "weaving": "織布",
+    "carving": "雕刻", "pottery": "陶藝",
+    "district": "區/縣", "province": "省/府",
+    "prefecture": "府", "subdistrict": "鄉鎮",
+    "municipality": "市",
+    "dessert": "甜點", "snack": "零食",
+    "breakfast": "早餐", "dinner": "晚餐", "supper": "晚餐",
+    "banquet": "宴會", "feast": "盛宴",
+    "recipe": "食譜", "ingredient": "食材",
+    "flavor": "味道", "aroma": "香氣",
+    "texture": "質地", "crispy": "脆",
+    "chewy": "有嚼勁", "tender": "嫩",
+    "raw": "生的", "cooked": "熟的",
+    "ripe": "成熟", "unripe": "未成熟",
+    "stale": "不新鮮", "spoiled": "壞掉",
+    "dish": "菜餚", "meal": "餐",
+    "drinking": "飲用", "vessel": "容器",
+    "expression": "表達/表情",
+    "exclamation": "感嘆詞", "particle": "助詞",
+    "classifier": "量詞", "conjunction": "連接詞",
+    "preposition": "介詞", "pronoun": "代名詞",
+    "honorific": "敬語", "title": "頭銜/標題",
+    "suffix": "後綴", "prefix": "前綴",
+    "saint": "聖人", "apostle": "使徒",
+    "gospel": "福音", "scripture": "經典",
+    "reign": "統治", "dynasty": "朝代",
+    "era": "時代", "epoch": "紀元",
+    "calendar": "日曆", "almanac": "年曆",
+    "horoscope": "星座運勢", "zodiac": "生肖/星座",
+    "constellation": "星座",
+    "fortune": "財富/運氣", "prophecy": "預言",
+    "charm": "護身符", "amulet": "護身符",
+    "talisman": "護身符", "spell": "咒語",
+    "worship": "崇拜", "offering": "供品",
+    "incense": "香", "candle": "蠟燭",
+    "meditation": "冥想", "chant": "唸經",
+    "sermon": "布道", "preaching": "傳教",
+    "pilgrim": "朝聖者", "pilgrimage": "朝聖",
+    "space": "空間/太空", "field": "田/場/領域",
+    "market": "市場", "commerce": "商業",
+    "industry": "工業/產業", "agriculture": "農業",
+    "fishery": "漁業", "forestry": "林業",
+    "mining": "採礦", "construction": "建設",
+    "engineering": "工程", "architecture": "建築",
+    "textile": "紡織", "garment": "服裝",
+    "furniture": "家具", "appliance": "電器",
+    "vehicle": "車輛", "aircraft": "飛機",
+    "weapon": "武器", "ammunition": "彈藥",
+    "explosive": "炸藥",
+    "ceremony": "儀式/典禮", "parade": "遊行",
+    "procession": "行列", "carnival": "嘉年華",
+    "concert": "音樂會", "exhibition": "展覽",
+    "conference": "會議", "seminar": "研討會",
+    "debate": "辯論", "speech": "演講",
+    "lecture": "講座", "lesson": "課",
+    "curriculum": "課程", "syllabus": "教學大綱",
+    "diploma": "文憑", "certificate": "證書",
+    "scholarship": "獎學金",
+    "compound": "複合/化合物",
+    "miscellaneous": "雜項",
+    "moment": "時刻/片刻",
+    "reign": "統治/在位",
+    "epoch": "紀元/時期",
+    "misfortunes": "不幸",
+    "circulate": "流通",
+    "subordinate": "下屬",
+    "inferior": "低下/劣等",
+    "auxiliary": "輔助",
+    "effeminate": "娘娘腔",
+    "fostering": "撫養",
+    "foster": "寄養/培養",
+    "maternal": "母系的", "paternal": "父系的",
+    "snail": "蝸牛", "leech": "水蛭",
+    "scorpion": "蠍子",
+    "zebra": "斑馬", "giraffe": "長頸鹿",
+    "rhinoceros": "犀牛", "hippopotamus": "河馬",
+    "buffalo": "水牛", "ox": "牛",
+    "goat": "山羊", "donkey": "驢",
+    "camel": "駱駝", "squirrel": "松鼠",
+    "bat": "蝙蝠", "hedgehog": "刺蝟",
+    "otter": "水獺", "wolf": "狼", "fox": "狐狸",
+    "leopard": "豹", "panther": "黑豹",
+    "cheetah": "獵豹", "jaguar": "美洲豹",
+    "gorilla": "大猩猩", "orangutan": "紅毛猩猩",
+    "peacock": "孔雀", "swan": "天鵝", "crane": "鶴",
+    "stork": "鸛", "pelican": "鵜鶘",
+    "hawk": "鷹", "falcon": "隼",
+    "sparrow": "麻雀", "robin": "知更鳥",
+    "woodpecker": "啄木鳥", "hummingbird": "蜂鳥",
+    "penguin": "企鵝", "flamingo": "火烈鳥",
+    "seagull": "海鷗", "albatross": "信天翁",
+    "catfish": "鯰魚", "eel": "鰻魚",
+    "salmon": "鮭魚", "tuna": "鮪魚",
+    "sardine": "沙丁魚", "anchovy": "鯷魚",
+    "oyster": "牡蠣", "clam": "蛤蜊",
+    "lobster": "龍蝦", "octopus": "章魚",
+    "jellyfish": "水母", "starfish": "海星",
+    "coral": "珊瑚", "seaweed": "海藻",
+    "gecko": "壁虎", "chameleon": "變色龍",
+    "python": "蟒蛇", "cobra": "眼鏡蛇",
+    "centipede": "蜈蚣", "millipede": "馬陸",
+    "grasshopper": "蚱蜢", "cricket": "蟋蟀",
+    "cicada": "蟬", "dragonfly": "蜻蜓",
+    "firefly": "螢火蟲", "ladybug": "瓢蟲",
+    "termite": "白蟻", "louse": "蝨子",
+    "flea": "跳蚤", "tick": "蜱",
+    "durian": "榴槤", "papaya": "木瓜",
+    "guava": "芭樂", "jackfruit": "波羅蜜",
+    "lychee": "荔枝", "longan": "龍眼",
+    "rambutan": "紅毛丹", "mangosteen": "山竹",
+    "tamarind": "羅望子", "starfruit": "楊桃",
+    "pomelo": "柚子", "tangerine": "橘子",
+    "avocado": "酪梨", "olive": "橄欖",
+    "cherry": "櫻桃", "strawberry": "草莓",
+    "blueberry": "藍莓", "raspberry": "覆盆子",
+    "peach": "桃子", "plum": "李子",
+    "apricot": "杏", "pear": "梨",
+    "apple": "蘋果", "fig": "無花果",
+    "date": "棗/日期", "pomegranate": "石榴",
+    "cashew": "腰果", "almond": "杏仁",
+    "peanut": "花生", "walnut": "核桃",
+    "sesame": "芝麻", "soybean": "大豆",
+    "tofu": "豆腐", "soy": "醬油/大豆",
+    "basil": "羅勒", "coriander": "香菜",
+    "mint": "薄荷", "parsley": "歐芹",
+    "dill": "蒔蘿", "cumin": "小茴香",
+    "turmeric": "薑黃", "cinnamon": "肉桂",
+    "clove": "丁香", "cardamom": "豆蔻",
+    "lemongrass": "香茅", "galangal": "南薑",
+    "shallot": "紅蔥頭", "chili": "辣椒",
+    "cabbage": "高麗菜", "lettuce": "生菜",
+    "spinach": "菠菜", "celery": "芹菜",
+    "carrot": "紅蘿蔔", "potato": "馬鈴薯",
+    "tomato": "番茄", "cucumber": "小黃瓜",
+    "pumpkin": "南瓜", "eggplant": "茄子",
+    "broccoli": "花椰菜", "cauliflower": "花菜",
+    "okra": "秋葵", "radish": "蘿蔔",
+    "turnip": "蕪菁", "beet": "甜菜",
+    "yam": "山藥", "taro": "芋頭",
+    "cassava": "木薯", "sweet potato": "地瓜",
+}
+
+
+def download(url: str, name: str) -> Path:
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    path = CACHE_DIR / name
+    if path.exists():
+        print(f"  [cache] {path.name} ({path.stat().st_size / 1024 / 1024:.1f} MB)")
+        return path
+    print(f"  Downloading {name} ...")
+    urllib.request.urlretrieve(url, path)
+    print(f"  Done ({path.stat().st_size / 1024 / 1024:.1f} MB)")
+    return path
+
+
+def clean_en_gloss(gloss: str) -> str:
+    """Extract first clean English term from a Wiktionary gloss."""
+    g = re.sub(r"^\(.*?\)\s*", "", gloss).strip()
+    g = re.sub(r"\s*\(.*?\)\s*$", "", g).strip()
+    g = g.split(";")[0].strip()
+    g = g.split(",")[0].strip()
+    # Remove leading "to " for verb lookup
+    return g
+
+
+_STOP_WORDS = {
+    "a", "an", "the", "of", "or", "and", "in", "on", "at", "to", "for",
+    "with", "by", "from", "as", "is", "it", "be", "are", "was", "were",
+    "any", "some", "that", "this", "which", "who", "what", "its",
+    "one", "used", "having", "being", "something", "someone",
+    "thing", "person", "especially", "particularly", "usually",
+    "often", "common", "general", "various", "certain", "particular",
+}
+
+
+def en_to_zh(en_gloss: str) -> str | None:
+    """Translate English gloss to Chinese using our mapping."""
+    g = clean_en_gloss(en_gloss).lower().strip()
+
+    # Direct match (full phrase)
+    bare = re.sub(r"^to\s+", "", g)
+    if bare in EN_ZH_MAP:
+        return EN_ZH_MAP[bare]
+
+    # Try first non-stop word
+    for word in bare.split():
+        if word in _STOP_WORDS or len(word) <= 1:
+            continue
+        if word in EN_ZH_MAP:
+            return EN_ZH_MAP[word]
+        break  # only try the first meaningful word
+
+    return None
+
+
+def _translate_gloss(raw: str, all_glosses: list[str]) -> str | None:
+    """Try to translate a single English gloss to Chinese.
+
+    Handles patterns:
+    - Direct word match via EN_ZH_MAP
+    - "abstract noun of X" → same as X
+    - "alternative/archaic/obsolete/nonstandard form/spelling of X"
+    - "synonym of X"
+    - Country/place patterns
+    - "X animal/bird/fish/plant" patterns
+    """
+    g = raw.strip()
+
+    # Pattern: "abstract noun of ..." → skip the meta, translate the root
+    m = re.match(r"(?:abstract noun|nominalization) of (.+?)\.?$", g, re.I)
+    if m:
+        return en_to_zh(m.group(1))
+
+    # Pattern: "alternative/archaic/obsolete/formal/informal form/spelling of X"
+    m = re.match(
+        r"(?:alternative|archaic|obsolete|nonstandard|formal|informal|"
+        r"dialectal|colloquial|clipping|short) "
+        r"(?:form|spelling|script) of (.+?)\.?$", g, re.I
+    )
+    if m:
+        return en_to_zh(m.group(1))
+
+    # Pattern: "synonym of X"
+    m = re.match(r"synonym of (.+?)\.?$", g, re.I)
+    if m:
+        return en_to_zh(m.group(1))
+
+    # Skip misspellings, they're not useful
+    if re.match(r"misspelling of", g, re.I):
+        return en_to_zh(re.sub(r"^misspelling of\s+", "", g, flags=re.I))
+
+    # Pattern: country/place
+    m = re.match(r"(.+?) \(a country", g, re.I)
+    if m:
+        return _COUNTRY_MAP.get(m.group(1).lower(), m.group(1))
+
+    # Direct translation
+    return en_to_zh(g)
+
+
+# ── 國家/地名映射 ──
+_COUNTRY_MAP = {
+    "australia": "澳洲", "japan": "日本", "china": "中國",
+    "cambodia": "柬埔寨", "laos": "寮國", "vietnam": "越南",
+    "myanmar": "緬甸", "burma": "緬甸", "malaysia": "馬來西亞",
+    "singapore": "新加坡", "indonesia": "印尼", "philippines": "菲律賓",
+    "india": "印度", "korea": "韓國", "taiwan": "臺灣",
+    "russia": "俄羅斯", "france": "法國", "germany": "德國",
+    "england": "英格蘭", "italy": "義大利", "spain": "西班牙",
+    "portugal": "葡萄牙", "netherlands": "荷蘭", "belgium": "比利時",
+    "switzerland": "瑞士", "austria": "奧地利", "sweden": "瑞典",
+    "norway": "挪威", "denmark": "丹麥", "finland": "芬蘭",
+    "poland": "波蘭", "greece": "希臘", "turkey": "土耳其",
+    "egypt": "埃及", "south africa": "南非", "brazil": "巴西",
+    "argentina": "阿根廷", "mexico": "墨西哥", "canada": "加拿大",
+    "united states": "美國", "new zealand": "紐西蘭",
+    "ireland": "愛爾蘭", "scotland": "蘇格蘭",
+    "iran": "伊朗", "iraq": "伊拉克", "israel": "以色列",
+    "saudi arabia": "沙烏地阿拉伯", "pakistan": "巴基斯坦",
+    "bangladesh": "孟加拉", "nepal": "尼泊爾", "sri lanka": "斯里蘭卡",
+    "mongolia": "蒙古", "north korea": "北韓", "south korea": "南韓",
+    "hong kong": "香港", "macau": "澳門",
+    "thailand": "泰國", "brunei": "汶萊", "timor-leste": "東帝汶",
+    "cuba": "古巴", "jamaica": "牙買加", "haiti": "海地",
+    "colombia": "哥倫比亞", "peru": "秘魯", "chile": "智利",
+    "venezuela": "委內瑞拉", "ecuador": "厄瓜多",
+    "nigeria": "奈及利亞", "kenya": "肯亞", "ethiopia": "衣索比亞",
+    "morocco": "摩洛哥", "algeria": "阿爾及利亞", "tunisia": "突尼西亞",
+    "libya": "利比亞", "sudan": "蘇丹", "ghana": "迦納",
+    "ukraine": "烏克蘭", "czech republic": "捷克", "romania": "羅馬尼亞",
+    "hungary": "匈牙利", "bulgaria": "保加利亞", "serbia": "塞爾維亞",
+    "croatia": "克羅埃西亞", "iceland": "冰島", "luxembourg": "盧森堡",
+    "qatar": "卡達", "kuwait": "科威特",
+    "afghanistan": "阿富汗", "uzbekistan": "烏茲別克",
+}
+
+
+def extract_and_translate(th_path: Path) -> dict[str, str]:
+    """Extract Thai words and translate to Chinese."""
+    result: dict[str, str] = {}
+
+    with gzip.open(th_path, "rt", encoding="utf-8") as f:
+        for line in f:
+            entry = json.loads(line)
+            word = entry.get("word", "")
+            if not word or not any("\u0e00" <= c <= "\u0e7f" for c in word):
+                continue
+            if word in result:
+                continue
+
+            all_glosses = []
+            for sense in entry.get("senses", []):
+                for g in sense.get("glosses", []):
+                    g2 = re.sub(r"^\(.*?\)\s*", "", g).strip()
+                    if g2:
+                        all_glosses.append(g2)
+
+            # Try each gloss
+            zh_parts = []
+            for g in all_glosses:
+                zh = _translate_gloss(g, all_glosses)
+                if zh and zh not in zh_parts:
+                    zh_parts.append(zh)
+                if len(zh_parts) >= 3:
+                    break
+
+            if zh_parts:
+                result[word] = "/".join(zh_parts)
+
+    return result
+
+
+def main():
+    print("=== 下載 Wiktionary Thai 數據 ===")
+    th_path = download(TH_URL, "th-extract.jsonl.gz")
+
+    print("\n=== 提取並翻譯 ===")
+    auto_glosses = extract_and_translate(th_path)
+    print(f"  自動翻譯: {len(auto_glosses)} 詞")
+
+    print("\n=== 合併手動釋義 ===")
+    with open(EXISTING_JSON, encoding="utf-8") as f:
+        hand = json.load(f)
+    print(f"  手動釋義: {len(hand)} 詞")
+
+    merged = {}
+    merged.update(auto_glosses)  # auto first
+    merged.update(hand)  # hand overwrites
+    print(f"  合併結果: {len(merged)} 詞")
+
+    print("\n=== 寫入 ===")
+    with open(EXISTING_JSON, "w", encoding="utf-8") as f:
+        json.dump(merged, f, ensure_ascii=False, indent=2)
+    print(f"  寫入 {len(merged)} 詞到 {EXISTING_JSON}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

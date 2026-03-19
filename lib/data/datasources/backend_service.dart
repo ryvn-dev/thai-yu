@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../models/thai_glosses.dart' show ThaiGlosses;
 import '../models/word_block.dart';
 
 part 'backend_service.g.dart';
@@ -77,7 +78,7 @@ class BackendService {
       final wordJson = <String, dynamic>{
         'thai': word['thai'] as String,
         'roman': word['rtgs'] as String? ?? '',
-        'gloss': word['gloss'] as String? ?? '…',
+        'gloss': ThaiGlosses.lookup(word['thai'] as String),
         'tones': word['tones'] as List<dynamic>? ?? ['mid'],
         'parts': <Map<String, dynamic>>[],
         'toneReason': _buildToneReason(firstSyl),
