@@ -9,11 +9,17 @@ CLAUDE.md
 .idea/
 *.iml
 
+# Python / uv (tools/)
+tools/.venv/
+tools/.dart_tool/
+tools/.pytest_cache/
+tools/.python-version
+__pycache__/
+*.pyc
+
 # Miscellaneous
 *.class
-*.lock
 *.log
-*.pyc
 *.swp
 .buildlog/
 .history
