@@ -1,0 +1,14 @@
+[project]
+name = "thai-yu-tools"
+version = "0.1.0"
+description = "Scripts and utilities for Thai Yu — dictionary building, data analysis, etc."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.135.1",
+    "httpx>=0.28.1",
+    "numpy>=2.4.3",
+    "pytest>=9.0.2",
+    "pythainlp>=5.3.1",
+    "python-crfsuite>=0.9.12",
+    "uvicorn[standard]>=0.42.0",
+]
