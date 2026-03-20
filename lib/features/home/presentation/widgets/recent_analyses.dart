@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../../../../data/datasources/analysis_cache.dart';
+import '../../../../data/models/analysis_result.dart';
+import '../../../../data/models/word_block.dart';
+import '../../../analysis/application/analysis_controller.dart';
 
 part 'recent_analyses.g.dart';
 
@@ -50,7 +55,7 @@ class RecentAnalyses extends ConsumerWidget {
                 itemCount: recents.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (context, i) =>
-                    _buildCard(context, recents[i]),
+                    _buildCard(context, ref, recents[i]),
               ),
             ),
           ],
@@ -59,14 +64,43 @@ class RecentAnalyses extends ConsumerWidget {
     );
   }
 
-  Widget _buildCard(BuildContext context, CachedAnalyse item) {
+  void _openCached(BuildContext context, WidgetRef ref, CachedAnalyse item) {
+    final decoded = jsonDecode(item.response);
+    final List<WordBlock> words;
+    final Map<int, String> sentenceGlosses;
+
+    if (decoded is Map<String, dynamic> && decoded.containsKey('words')) {
+      words = (decoded['words'] as List<dynamic>)
+          .map((e) => WordBlock.fromJson(e as Map<String, dynamic>))
+          .toList();
+      final glossesRaw =
+          decoded['sentenceGlosses'] as Map<String, dynamic>? ?? {};
+      sentenceGlosses =
+          glossesRaw.map((k, v) => MapEntry(int.parse(k), v as String));
+    } else {
+      words = (decoded as List<dynamic>)
+          .map((e) => WordBlock.fromJson(e as Map<String, dynamic>))
+          .toList();
+      sentenceGlosses = {};
+    }
+
+    ref.read(analysisControllerProvider.notifier).setResult(AnalysisResult(
+      input: item.input,
+      words: words,
+      analyzedAt: DateTime.fromMillisecondsSinceEpoch(item.createdAt),
+      sentenceGlosses: sentenceGlosses,
+    ));
+    context.push('/result');
+  }
+
+  Widget _buildCard(BuildContext context, WidgetRef ref, CachedAnalyse item) {
     // Truncate input for display
     final display = item.input.length > 20
         ? '${item.input.substring(0, 20)}…'
         : item.input;
 
     return GestureDetector(
-      onTap: () => context.push('/result', extra: item.hash),
+      onTap: () => _openCached(context, ref, item),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
