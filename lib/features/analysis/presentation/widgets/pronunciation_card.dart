@@ -113,30 +113,8 @@ class PronunciationCard extends ConsumerWidget {
                 word.gloss,
                 style: const TextStyle(fontSize: 13, color: AppColors.ink3),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               _SaveWordButton(word: word),
-              const SizedBox(width: 6),
-              // TTS speed toggle
-              Consumer(builder: (context, ref, _) {
-                final speed = ref.watch(ttsSpeedNotifierProvider);
-                return GestureDetector(
-                  onTap: () =>
-                      ref.read(ttsSpeedNotifierProvider.notifier).cycle(),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface2,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      speed.label,
-                      style: const TextStyle(
-                          fontSize: 9, color: AppColors.ink3),
-                    ),
-                  ),
-                );
-              }),
             ],
           ),
         ),

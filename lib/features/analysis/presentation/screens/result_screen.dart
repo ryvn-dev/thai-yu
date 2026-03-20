@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../config/theme/app_colors.dart';
+import '../../../../data/datasources/tts_service.dart';
 import '../../../../data/models/thai_font.dart';
 import '../../../../data/models/tone_type.dart';
 import '../../application/analysis_controller.dart';
@@ -138,8 +139,10 @@ class ResultScreen extends ConsumerWidget {
             ),
           );
         }),
-        const SizedBox(width: 4),
-        // Tone bar — fills remaining space, 2 on top + 3 on bottom
+        // TTS speed toggle — snail/rabbit
+        _buildSpeedToggle(ref),
+        const SizedBox(width: 8),
+        // Tone bar — fills remaining space
         Expanded(
           child: GestureDetector(
             onTap: () => context.push('/tones'),
@@ -162,6 +165,34 @@ class ResultScreen extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSpeedToggle(WidgetRef ref) {
+    final speed = ref.watch(ttsSpeedNotifierProvider);
+    // normal = fast forward, slow = play, verySlow = slow motion
+    final IconData icon;
+    switch (speed) {
+      case TtsSpeed.normal:
+        icon = Icons.fast_forward_rounded;
+      case TtsSpeed.slow:
+        icon = Icons.play_arrow_rounded;
+      case TtsSpeed.verySlow:
+        icon = Icons.slow_motion_video_rounded;
+    }
+    return GestureDetector(
+      onTap: () => ref.read(ttsSpeedNotifierProvider.notifier).cycle(),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          border: Border.all(color: AppColors.border2),
+          shape: BoxShape.circle,
+        ),
+        alignment: Alignment.center,
+        child: Icon(icon, size: 18, color: AppColors.ink2),
+      ),
     );
   }
 
