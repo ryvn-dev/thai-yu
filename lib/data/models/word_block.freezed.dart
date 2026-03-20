@@ -26,7 +26,6 @@ mixin _$WordBlock {
   String get gloss => throw _privateConstructorUsedError;
   @JsonKey(fromJson: _tonesFromJson, toJson: _tonesToJson)
   List<ToneType> get tones => throw _privateConstructorUsedError;
-  List<PhonemeBreakdown> get parts => throw _privateConstructorUsedError;
   String get toneReason =>
       throw _privateConstructorUsedError; // Tone rule variables (populated by OpenAI, used to verify tone)
   String? get initialConsonant => throw _privateConstructorUsedError;
@@ -62,7 +61,6 @@ abstract class $WordBlockCopyWith<$Res> {
     String gloss,
     @JsonKey(fromJson: _tonesFromJson, toJson: _tonesToJson)
     List<ToneType> tones,
-    List<PhonemeBreakdown> parts,
     String toneReason,
     String? initialConsonant,
     @JsonKey(fromJson: _consonantClassFromJson, toJson: _consonantClassToJson)
@@ -96,7 +94,6 @@ class _$WordBlockCopyWithImpl<$Res, $Val extends WordBlock>
     Object? roman = null,
     Object? gloss = null,
     Object? tones = null,
-    Object? parts = null,
     Object? toneReason = null,
     Object? initialConsonant = freezed,
     Object? consonantClass = freezed,
@@ -124,10 +121,6 @@ class _$WordBlockCopyWithImpl<$Res, $Val extends WordBlock>
                 ? _value.tones
                 : tones // ignore: cast_nullable_to_non_nullable
                       as List<ToneType>,
-            parts: null == parts
-                ? _value.parts
-                : parts // ignore: cast_nullable_to_non_nullable
-                      as List<PhonemeBreakdown>,
             toneReason: null == toneReason
                 ? _value.toneReason
                 : toneReason // ignore: cast_nullable_to_non_nullable
@@ -181,7 +174,6 @@ abstract class _$$WordBlockImplCopyWith<$Res>
     String gloss,
     @JsonKey(fromJson: _tonesFromJson, toJson: _tonesToJson)
     List<ToneType> tones,
-    List<PhonemeBreakdown> parts,
     String toneReason,
     String? initialConsonant,
     @JsonKey(fromJson: _consonantClassFromJson, toJson: _consonantClassToJson)
@@ -214,7 +206,6 @@ class __$$WordBlockImplCopyWithImpl<$Res>
     Object? roman = null,
     Object? gloss = null,
     Object? tones = null,
-    Object? parts = null,
     Object? toneReason = null,
     Object? initialConsonant = freezed,
     Object? consonantClass = freezed,
@@ -242,10 +233,6 @@ class __$$WordBlockImplCopyWithImpl<$Res>
             ? _value._tones
             : tones // ignore: cast_nullable_to_non_nullable
                   as List<ToneType>,
-        parts: null == parts
-            ? _value._parts
-            : parts // ignore: cast_nullable_to_non_nullable
-                  as List<PhonemeBreakdown>,
         toneReason: null == toneReason
             ? _value.toneReason
             : toneReason // ignore: cast_nullable_to_non_nullable
@@ -292,7 +279,6 @@ class _$WordBlockImpl implements _WordBlock {
     required this.gloss,
     @JsonKey(fromJson: _tonesFromJson, toJson: _tonesToJson)
     final List<ToneType> tones = const [ToneType.mid],
-    required final List<PhonemeBreakdown> parts,
     required this.toneReason,
     this.initialConsonant,
     @JsonKey(fromJson: _consonantClassFromJson, toJson: _consonantClassToJson)
@@ -305,7 +291,6 @@ class _$WordBlockImpl implements _WordBlock {
     final List<String> originalSyllables = const [],
     final List<SyllableBreakdown> syllableBreakdowns = const [],
   }) : _tones = tones,
-       _parts = parts,
        _originalSyllables = originalSyllables,
        _syllableBreakdowns = syllableBreakdowns;
 
@@ -325,14 +310,6 @@ class _$WordBlockImpl implements _WordBlock {
     if (_tones is EqualUnmodifiableListView) return _tones;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableListView(_tones);
-  }
-
-  final List<PhonemeBreakdown> _parts;
-  @override
-  List<PhonemeBreakdown> get parts {
-    if (_parts is EqualUnmodifiableListView) return _parts;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_parts);
   }
 
   @override
@@ -374,7 +351,7 @@ class _$WordBlockImpl implements _WordBlock {
 
   @override
   String toString() {
-    return 'WordBlock(thai: $thai, roman: $roman, gloss: $gloss, tones: $tones, parts: $parts, toneReason: $toneReason, initialConsonant: $initialConsonant, consonantClass: $consonantClass, toneMark: $toneMark, syllableType: $syllableType, sentenceIndex: $sentenceIndex, originalSyllables: $originalSyllables, syllableBreakdowns: $syllableBreakdowns)';
+    return 'WordBlock(thai: $thai, roman: $roman, gloss: $gloss, tones: $tones, toneReason: $toneReason, initialConsonant: $initialConsonant, consonantClass: $consonantClass, toneMark: $toneMark, syllableType: $syllableType, sentenceIndex: $sentenceIndex, originalSyllables: $originalSyllables, syllableBreakdowns: $syllableBreakdowns)';
   }
 
   @override
@@ -386,7 +363,6 @@ class _$WordBlockImpl implements _WordBlock {
             (identical(other.roman, roman) || other.roman == roman) &&
             (identical(other.gloss, gloss) || other.gloss == gloss) &&
             const DeepCollectionEquality().equals(other._tones, _tones) &&
-            const DeepCollectionEquality().equals(other._parts, _parts) &&
             (identical(other.toneReason, toneReason) ||
                 other.toneReason == toneReason) &&
             (identical(other.initialConsonant, initialConsonant) ||
@@ -417,7 +393,6 @@ class _$WordBlockImpl implements _WordBlock {
     roman,
     gloss,
     const DeepCollectionEquality().hash(_tones),
-    const DeepCollectionEquality().hash(_parts),
     toneReason,
     initialConsonant,
     consonantClass,
@@ -449,7 +424,6 @@ abstract class _WordBlock implements WordBlock {
     required final String gloss,
     @JsonKey(fromJson: _tonesFromJson, toJson: _tonesToJson)
     final List<ToneType> tones,
-    required final List<PhonemeBreakdown> parts,
     required final String toneReason,
     final String? initialConsonant,
     @JsonKey(fromJson: _consonantClassFromJson, toJson: _consonantClassToJson)
@@ -475,8 +449,6 @@ abstract class _WordBlock implements WordBlock {
   @override
   @JsonKey(fromJson: _tonesFromJson, toJson: _tonesToJson)
   List<ToneType> get tones;
-  @override
-  List<PhonemeBreakdown> get parts;
   @override
   String get toneReason; // Tone rule variables (populated by OpenAI, used to verify tone)
   @override

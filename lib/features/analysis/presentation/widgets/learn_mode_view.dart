@@ -89,127 +89,117 @@ class LearnModeView extends ConsumerWidget {
             ),
 
             // Per-syllable phoneme parts (same structure as bottom sheet)
-            if (word.syllableBreakdowns.isNotEmpty)
-              ...word.syllableBreakdowns.map((syl) {
-                final sylTone = ToneType.values.firstWhere(
-                  (t) => t.name == syl.tone,
-                  orElse: () => ToneType.mid,
-                );
-                final origThai = syl.originalThai.isNotEmpty
-                    ? syl.originalThai
-                    : syl.thai;
-                final showPron = origThai != syl.thai;
-                final sylGloss = syl.gloss;
-                final showSylGloss = sylGloss != '…' &&
-                    sylGloss != word.gloss &&
-                    word.tones.length > 1;
+            ...word.syllableBreakdowns.map((syl) {
+              final sylTone = ToneType.values.firstWhere(
+                (t) => t.name == syl.tone,
+                orElse: () => ToneType.mid,
+              );
+              final origThai = syl.originalThai.isNotEmpty
+                  ? syl.originalThai
+                  : syl.thai;
+              final showPron = origThai != syl.thai;
+              final sylGloss = syl.gloss;
+              final showSylGloss = sylGloss != '…' &&
+                  sylGloss != word.gloss &&
+                  word.tones.length > 1;
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Syllable header with badges + gloss right-aligned
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(18, 8, 18, 4),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Wrap(
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 5,
-                              runSpacing: 4,
-                              children: [
-                                Text(
-                                  origThai,
-                                  style: AppTextStyles.thaiPhoneme.copyWith(
-                                    color: sylTone.color,
-                                    fontSize: 16,
-                                  ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Syllable header with badges + gloss right-aligned
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(18, 8, 18, 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 5,
+                            runSpacing: 4,
+                            children: [
+                              Text(
+                                origThai,
+                                style: AppTextStyles.thaiPhoneme.copyWith(
+                                  color: sylTone.color,
+                                  fontSize: 16,
                                 ),
-                                if (showPron)
+                              ),
+                              if (showPron)
+                                Text(
+                                  '(${syl.thai})',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: AppColors.ink3),
+                                ),
+                              Text(
+                                syl.rtgs,
+                                style: AppTextStyles.mono
+                                    .copyWith(color: AppColors.ink3),
+                              ),
+                              if (syl.isHoNam)
+                                _badge('ห นำ', AppColors.toneLow,
+                                    AppColors.toneLowBg),
+                              if (syl.hasImplicitVowel)
+                                _badge('隱含元音', AppColors.toneHigh,
+                                    AppColors.toneHighBg),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 16,
+                                    height: 10,
+                                    child: CustomPaint(
+                                      painter: ToneCurvePainter(
+                                          tone: sylTone, strokeWidth: 1.2),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
                                   Text(
-                                    '(${syl.thai})',
-                                    style: const TextStyle(
-                                        fontSize: 12, color: AppColors.ink3),
+                                    sylTone.label,
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      color: sylTone.color,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                Text(
-                                  syl.rtgs,
-                                  style: AppTextStyles.mono
-                                      .copyWith(color: AppColors.ink3),
-                                ),
-                                if (syl.isHoNam)
-                                  _badge('ห นำ', AppColors.toneLow,
-                                      AppColors.toneLowBg),
-                                if (syl.hasImplicitVowel)
-                                  _badge('隱含元音', AppColors.toneHigh,
-                                      AppColors.toneHighBg),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: 16,
-                                      height: 10,
-                                      child: CustomPaint(
-                                        painter: ToneCurvePainter(
-                                            tone: sylTone, strokeWidth: 1.2),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 2),
-                                    Text(
-                                      sylTone.label,
-                                      style: TextStyle(
-                                        fontSize: 9,
-                                        color: sylTone.color,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (showSylGloss)
-                            Text(
-                              sylGloss,
-                              style: const TextStyle(
-                                  fontSize: 12, color: AppColors.ink3),
-                            ),
-                        ],
-                      ),
-                    ),
-                    // Parts
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 4),
-                      child: Column(
-                        children: syl.parts
-                            .map((p) => _buildRow(p, sylTone))
-                            .toList(),
-                      ),
-                    ),
-                    // Tone reason
-                    if (syl.toneReason.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
-                        child: Text(
-                          syl.toneReason,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: sylTone.color.withValues(alpha: 0.7),
-                            height: 1.5,
+                                ],
+                              ),
+                            ],
                           ),
                         ),
+                        if (showSylGloss)
+                          Text(
+                            sylGloss,
+                            style: const TextStyle(
+                                fontSize: 12, color: AppColors.ink3),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Parts
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 4),
+                    child: Column(
+                      children: syl.parts
+                          .map((p) => _buildRow(p, sylTone))
+                          .toList(),
+                    ),
+                  ),
+                  // Tone reason
+                  if (syl.toneReason.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+                      child: Text(
+                        syl.toneReason,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: sylTone.color.withValues(alpha: 0.7),
+                          height: 1.5,
+                        ),
                       ),
-                  ],
-                );
-              })
-            else
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                child: Column(
-                  children:
-                      word.parts.map((p) => _buildRow(p, tone)).toList(),
-                ),
-              ),
+                    ),
+                ],
+              );
+            }),
           ],
         ),
       ),

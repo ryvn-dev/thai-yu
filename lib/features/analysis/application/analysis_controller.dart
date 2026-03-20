@@ -20,138 +20,140 @@ final demoWords = [
     roman: 'chǎn',
     gloss: '我',
     tones: [ToneType.rise],
-
-    parts: [
-      PhonemeBreakdown(
-        label: '聲母',
-        char_: 'ฉ',
-        sound: '/ch/',
-        zhApprox: '像「車」的 ch-',
-      ),
-      PhonemeBreakdown(
-        label: '韻母',
-        char_: 'ั',
-        sound: '/a/',
-        zhApprox: '短元音，像「啊」',
-      ),
-      PhonemeBreakdown(
-        label: '韻尾',
-        char_: 'น',
-        sound: '/-n/',
-        zhApprox: '收 -n 尾',
+    toneReason: 'ฉ 這個聲母自帶升調屬性 → 音往上走',
+    syllableBreakdowns: [
+      SyllableBreakdown(
+        thai: 'ฉัน',
+        tone: 'rise',
+        toneReason: '高類聲母 + 活音節 → rise',
+        parts: [
+          PhonemeBreakdown(
+            label: '聲母', char_: 'ฉ', sound: '/ch/',
+            zhApprox: '像「車」的 ch-',
+          ),
+          PhonemeBreakdown(
+            label: '韻母', char_: 'ั', sound: '/a/',
+            zhApprox: '短元音，像「啊」',
+          ),
+          PhonemeBreakdown(
+            label: '韻尾', char_: 'น', sound: '/-n/',
+            zhApprox: '收 -n 尾',
+          ),
+        ],
       ),
     ],
-    toneReason: 'ฉ 這個聲母自帶升調屬性 → 音往上走',
   ),
   const WordBlock(
     thai: 'ชอบ',
     roman: 'chôp',
     gloss: '喜歡',
     tones: [ToneType.fall],
-    parts: [
-      PhonemeBreakdown(
-        label: '聲母',
-        char_: 'ช',
-        sound: '/ch/',
-        zhApprox: '氣流輕柔版的 ch-',
-      ),
-      PhonemeBreakdown(
-        label: '韻母',
-        char_: 'อ',
-        sound: '/ɔː/',
-        zhApprox: '長元音，嘴圓，像「哦——」',
-      ),
-      PhonemeBreakdown(
-        label: '韻尾',
-        char_: 'บ',
-        sound: '/-p/',
-        zhApprox: '停在嘴唇，幾乎不送氣',
-        isSilent: true,
+    toneReason: 'ช 低類聲母 + 長元音閉音節 → 音從高處急降',
+    syllableBreakdowns: [
+      SyllableBreakdown(
+        thai: 'ชอบ',
+        tone: 'fall',
+        toneReason: '低類聲母 + 長元音閉音節 → fall',
+        parts: [
+          PhonemeBreakdown(
+            label: '聲母', char_: 'ช', sound: '/ch/',
+            zhApprox: '氣流輕柔版的 ch-',
+          ),
+          PhonemeBreakdown(
+            label: '韻母', char_: 'อ', sound: '/ɔː/',
+            zhApprox: '長元音，嘴圓，像「哦——」',
+          ),
+          PhonemeBreakdown(
+            label: '韻尾', char_: 'บ', sound: '/-p/',
+            zhApprox: '停在嘴唇，幾乎不送氣', isSilent: true,
+          ),
+        ],
       ),
     ],
-    toneReason: 'ช 低類聲母 + 長元音閉音節 → 音從高處急降',
   ),
   const WordBlock(
     thai: 'กิน',
     roman: 'kin',
     gloss: '吃',
     tones: [ToneType.mid],
-    parts: [
-      PhonemeBreakdown(
-        label: '聲母',
-        char_: 'ก',
-        sound: '/k/',
-        zhApprox: '不送氣，像「格」的 k',
-      ),
-      PhonemeBreakdown(
-        label: '韻母',
-        char_: 'ิ',
-        sound: '/i/',
-        zhApprox: '短元音，像「衣」',
-      ),
-      PhonemeBreakdown(
-        label: '韻尾',
-        char_: 'น',
-        sound: '/-n/',
-        zhApprox: '收 -n 尾',
+    toneReason: 'ก 這個聲母自帶中調屬性 → 平穩',
+    syllableBreakdowns: [
+      SyllableBreakdown(
+        thai: 'กิน',
+        tone: 'mid',
+        toneReason: '中類聲母 + 活音節 → mid',
+        parts: [
+          PhonemeBreakdown(
+            label: '聲母', char_: 'ก', sound: '/k/',
+            zhApprox: '不送氣，像「格」的 k',
+          ),
+          PhonemeBreakdown(
+            label: '韻母', char_: 'ิ', sound: '/i/',
+            zhApprox: '短元音，像「衣」',
+          ),
+          PhonemeBreakdown(
+            label: '韻尾', char_: 'น', sound: '/-n/',
+            zhApprox: '收 -n 尾',
+          ),
+        ],
       ),
     ],
-    toneReason: 'ก 這個聲母自帶中調屬性 → 平穩',
   ),
   const WordBlock(
     thai: 'ข้าว',
     roman: 'khâo',
     gloss: '飯',
     tones: [ToneType.fall],
-    parts: [
-      PhonemeBreakdown(
-        label: '聲母',
-        char_: 'ข',
-        sound: '/kh/',
-        zhApprox: '送氣音，像「可」的 kh-',
-      ),
-      PhonemeBreakdown(
-        label: '韻母',
-        char_: 'า',
-        sound: '/aː/',
-        zhApprox: '長元音，像「啊——」',
-      ),
-      PhonemeBreakdown(
-        label: '韻尾',
-        char_: 'ว',
-        sound: '/-o/',
-        zhApprox: '收尾滑音',
+    toneReason: '้ 這個符號寫在這裡 → 音往下降',
+    syllableBreakdowns: [
+      SyllableBreakdown(
+        thai: 'ข้าว',
+        tone: 'fall',
+        toneReason: '高類聲母 + ้ + 活音節 → fall',
+        parts: [
+          PhonemeBreakdown(
+            label: '聲母', char_: 'ข', sound: '/kh/',
+            zhApprox: '送氣音，像「可」的 kh-',
+          ),
+          PhonemeBreakdown(
+            label: '韻母', char_: 'า', sound: '/aː/',
+            zhApprox: '長元音，像「啊——」',
+          ),
+          PhonemeBreakdown(
+            label: '韻尾', char_: 'ว', sound: '/-o/',
+            zhApprox: '收尾滑音',
+          ),
+        ],
       ),
     ],
-    toneReason: '้ 這個符號寫在這裡 → 音往下降',
   ),
   const WordBlock(
     thai: 'ผัด',
     roman: 'phàt',
     gloss: '炒',
     tones: [ToneType.low],
-    parts: [
-      PhonemeBreakdown(
-        label: '聲母',
-        char_: 'ผ',
-        sound: '/ph/',
-        zhApprox: '送氣音，像「坡」的 ph-',
-      ),
-      PhonemeBreakdown(
-        label: '韻母',
-        char_: 'ั',
-        sound: '/a/',
-        zhApprox: '短元音，像「啊」',
-      ),
-      PhonemeBreakdown(
-        label: '韻尾',
-        char_: 'ด',
-        sound: '/-t/',
-        zhApprox: '停在舌尖，幾乎不送氣',
-        isSilent: true,
+    toneReason: 'ผ + 閉音節 → 音沉低',
+    syllableBreakdowns: [
+      SyllableBreakdown(
+        thai: 'ผัด',
+        tone: 'low',
+        toneReason: '高類聲母 + 短元音閉音節 → low',
+        parts: [
+          PhonemeBreakdown(
+            label: '聲母', char_: 'ผ', sound: '/ph/',
+            zhApprox: '送氣音，像「坡」的 ph-',
+          ),
+          PhonemeBreakdown(
+            label: '韻母', char_: 'ั', sound: '/a/',
+            zhApprox: '短元音，像「啊」',
+          ),
+          PhonemeBreakdown(
+            label: '韻尾', char_: 'ด', sound: '/-t/',
+            zhApprox: '停在舌尖，幾乎不送氣', isSilent: true,
+          ),
+        ],
       ),
     ],
-    toneReason: 'ผ + 閉音節 → 音沉低',
   ),
 ];
 

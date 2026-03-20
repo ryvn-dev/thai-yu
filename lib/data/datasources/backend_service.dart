@@ -112,7 +112,6 @@ class BackendService {
         'roman': word['rtgs'] as String? ?? '',
         'gloss': word['gloss'] as String? ?? '…',
         'tones': word['tones'] as List<dynamic>? ?? ['mid'],
-        'parts': <Map<String, dynamic>>[],
         'toneReason': firstSylPart['toneReason'] as String? ?? '',
         'initialConsonant': firstSyl['initial_consonant'],
         'consonantClass': firstSyl['consonant_class'],

@@ -101,18 +101,7 @@ class PronunciationCard extends ConsumerWidget {
         ),
 
         // Per-syllable phoneme breakdown
-        if (word.syllableBreakdowns.isNotEmpty)
-          ...word.syllableBreakdowns.map(_buildSyllableSection)
-        else
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            child: Column(
-              children: word.parts
-                  .map((p) => _buildPhonemeRow(p, tone))
-                  .toList(),
-            ),
-          ),
+        ...word.syllableBreakdowns.map(_buildSyllableSection),
 
         // Bottom padding
         const SizedBox(height: 12),

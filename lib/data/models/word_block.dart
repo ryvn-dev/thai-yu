@@ -16,7 +16,6 @@ abstract class WordBlock with _$WordBlock {
     @Default([ToneType.mid])
     @JsonKey(fromJson: _tonesFromJson, toJson: _tonesToJson)
     List<ToneType> tones,
-    required List<PhonemeBreakdown> parts,
     required String toneReason,
     // Tone rule variables (populated by OpenAI, used to verify tone)
     String? initialConsonant,

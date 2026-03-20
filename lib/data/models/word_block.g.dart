@@ -15,9 +15,6 @@ _$WordBlockImpl _$$WordBlockImplFromJson(
   tones: json['tones'] == null
       ? const [ToneType.mid]
       : _tonesFromJson(json['tones']),
-  parts: (json['parts'] as List<dynamic>)
-      .map((e) => PhonemeBreakdown.fromJson(e as Map<String, dynamic>))
-      .toList(),
   toneReason: json['toneReason'] as String,
   initialConsonant: json['initialConsonant'] as String?,
   consonantClass: _consonantClassFromJson(json['consonantClass'] as String?),
@@ -42,7 +39,6 @@ Map<String, dynamic> _$$WordBlockImplToJson(_$WordBlockImpl instance) =>
       'roman': instance.roman,
       'gloss': instance.gloss,
       'tones': _tonesToJson(instance.tones),
-      'parts': instance.parts,
       'toneReason': instance.toneReason,
       'initialConsonant': instance.initialConsonant,
       'consonantClass': _consonantClassToJson(instance.consonantClass),
