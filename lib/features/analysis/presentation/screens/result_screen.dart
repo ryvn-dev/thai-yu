@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -38,6 +39,26 @@ class ResultScreen extends ConsumerWidget {
           style: const TextStyle(fontSize: 14, color: AppColors.ink2),
         ),
         actions: [
+          // Share button
+          IconButton(
+            onPressed: () {
+              final words = result.words;
+              final buffer = StringBuffer();
+              for (final w in words) {
+                buffer.writeln('${w.thai} (${w.roman}) ${w.gloss}');
+              }
+              Clipboard.setData(ClipboardData(text: buffer.toString()));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('已複製分析結果'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
+            icon: const Icon(Icons.share_rounded,
+                size: 18, color: AppColors.ink3),
+            visualDensity: VisualDensity.compact,
+          ),
           // Learning mode toggle
           GestureDetector(
             onTap: () =>
@@ -72,7 +93,10 @@ class ResultScreen extends ConsumerWidget {
               // Result
               isLearningMode
                   ? LearnModeView(words: result.words)
-                  : SentenceView(words: result.words),
+                  : SentenceView(
+                      words: result.words,
+                      sentenceGlosses: result.sentenceGlosses,
+                    ),
             ],
           ),
         ),
