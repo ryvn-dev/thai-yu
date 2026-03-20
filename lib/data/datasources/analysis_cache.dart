@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'analysis_cache.g.dart';
@@ -19,7 +21,7 @@ class CachedAnalyses extends Table {
 
 @DriftDatabase(tables: [CachedAnalyses])
 class AnalysisDatabase extends _$AnalysisDatabase {
-  AnalysisDatabase() : super(NativeDatabase.memory());
+  AnalysisDatabase(super.executor);
 
   @override
   int get schemaVersion => 1;
@@ -60,8 +62,10 @@ class AnalysisDatabase extends _$AnalysisDatabase {
 }
 
 @Riverpod(keepAlive: true)
-AnalysisDatabase analysisDatabase(AnalysisDatabaseRef ref) {
-  final db = AnalysisDatabase();
+Future<AnalysisDatabase> analysisDatabase(AnalysisDatabaseRef ref) async {
+  final dir = await getApplicationDocumentsDirectory();
+  final file = File('${dir.path}/thai_yu_cache.db');
+  final db = AnalysisDatabase(NativeDatabase(file));
   ref.onDispose(db.close);
   return db;
 }

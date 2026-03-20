@@ -164,9 +164,8 @@ class AnalysisController extends _$AnalysisController {
     final text = thaiText.trim();
     if (text.isEmpty) return;
 
-    final repo = ref.read(analysisRepositoryProvider);
-
     try {
+      final repo = await ref.read(analysisRepositoryProvider.future);
       final result = await repo.analyze(text);
       state = result;
     } on BackendException catch (e) {

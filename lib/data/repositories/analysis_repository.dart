@@ -59,8 +59,10 @@ class AnalysisRepository {
 }
 
 @riverpod
-AnalysisRepository analysisRepository(AnalysisRepositoryRef ref) {
+Future<AnalysisRepository> analysisRepository(
+  AnalysisRepositoryRef ref,
+) async {
   final backend = ref.watch(backendServiceProvider);
-  final database = ref.watch(analysisDatabaseProvider);
+  final database = await ref.watch(analysisDatabaseProvider.future);
   return AnalysisRepository(backendService: backend, database: database);
 }

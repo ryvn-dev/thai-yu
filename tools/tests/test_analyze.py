@@ -46,8 +46,7 @@ def test_analyze_sawatdi_pronunciation():
 
 def test_analyze_empty():
     resp = client.post("/analyze", json={"text": ""})
-    assert resp.status_code == 200
-    assert resp.json()["sentences"] == []
+    assert resp.status_code == 422
 
 
 def test_analyze_sentence_splitting():

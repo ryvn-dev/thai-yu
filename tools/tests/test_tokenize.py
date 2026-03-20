@@ -18,9 +18,7 @@ def test_tokenize_basic():
 
 def test_tokenize_empty():
     resp = client.post("/tokenize", json={"text": ""})
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["words"] == []
+    assert resp.status_code == 422
 
 
 def test_tokenize_single_word():

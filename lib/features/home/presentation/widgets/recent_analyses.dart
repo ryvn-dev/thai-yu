@@ -11,7 +11,7 @@ part 'recent_analyses.g.dart';
 
 @riverpod
 Future<List<CachedAnalyse>> recentAnalyses(RecentAnalysesRef ref) async {
-  final db = ref.watch(analysisDatabaseProvider);
+  final db = await ref.watch(analysisDatabaseProvider.future);
   return db.getRecentAnalyses(limit: 10);
 }
 

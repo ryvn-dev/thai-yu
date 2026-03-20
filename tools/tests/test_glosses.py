@@ -18,8 +18,18 @@ def test_known_word_sawatdi():
 
 
 def test_unknown_word_fallback():
-    w = analyze_word("กขค")  # nonsense
-    assert w.gloss == "…"
+    """Pure nonsense should return '…', compound may split."""
+    from thai_glosses import lookup_gloss
+
+    assert lookup_gloss("xyzabc") == "…"
+
+
+def test_compound_split_fallback():
+    """Unknown compound words should split into known sub-words."""
+    from thai_glosses import lookup_gloss
+
+    result = lookup_gloss("ถ้อยคำ")
+    assert result != "…"
 
 
 def test_gloss_bundle_size():

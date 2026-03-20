@@ -6,7 +6,7 @@ part of 'recent_analyses.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$recentAnalysesHash() => r'57bd4a05b00bad71fd66d8266ad49ddb37382401';
+String _$recentAnalysesHash() => r'36680433d177c4f84aaecca8646e154a518e1fd4';
 
 /// See also [recentAnalyses].
 @ProviderFor(recentAnalyses)

@@ -524,11 +524,11 @@ class $AnalysisDatabaseManager {
 // RiverpodGenerator
 // **************************************************************************
 
-String _$analysisDatabaseHash() => r'cb7dbcf6d51162d90607de7d63e0eccfae63ca28';
+String _$analysisDatabaseHash() => r'bb506dceaf24b600eff8955749da418591b04429';
 
 /// See also [analysisDatabase].
 @ProviderFor(analysisDatabase)
-final analysisDatabaseProvider = Provider<AnalysisDatabase>.internal(
+final analysisDatabaseProvider = FutureProvider<AnalysisDatabase>.internal(
   analysisDatabase,
   name: r'analysisDatabaseProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -540,6 +540,6 @@ final analysisDatabaseProvider = Provider<AnalysisDatabase>.internal(
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef AnalysisDatabaseRef = ProviderRef<AnalysisDatabase>;
+typedef AnalysisDatabaseRef = FutureProviderRef<AnalysisDatabase>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

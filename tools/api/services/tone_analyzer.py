@@ -5,7 +5,7 @@ _scripts_dir = str(Path(__file__).resolve().parent.parent.parent / "scripts")
 if _scripts_dir not in sys.path:
     sys.path.insert(0, _scripts_dir)
 
-from thai_glosses import THAI_ZH_GLOSSES
+from thai_glosses import THAI_ZH_GLOSSES, lookup_gloss
 from word_overrides import WORD_OVERRIDES
 from thai_tables import (
     CLUSTER_TABLE,
@@ -384,12 +384,16 @@ def _build_syllable_parts(
     ho_nam_note = "（ห นำ → 高類）" if is_ho_nam else ""
     tone_reason = f"{cls_label}聲母{ho_nam_note}{mark_label} + {syl_label} → {syl.tone}"
 
+    orig = original_syllable or syl.thai
+    syl_gloss = lookup_gloss(orig)
+
     return SyllableParts(
         thai=syl.thai,
-        original_thai=original_syllable or syl.thai,
+        original_thai=orig,
         rtgs=syl.rtgs,
         tone=syl.tone,
         tone_reason=tone_reason,
+        gloss=syl_gloss,
         parts=parts,
         is_ho_nam=is_ho_nam,
         has_implicit_vowel=has_implicit_vowel,
@@ -480,7 +484,7 @@ def _build_from_override(word: str, override: dict) -> WordAnalysis:
 
     return WordAnalysis(
         thai=word, rtgs=rtgs,
-        gloss=THAI_ZH_GLOSSES.get(word, "…"),
+        gloss=lookup_gloss(word),
         syllables=[], tones=tones,
         original_syllables=original_syls,
         syllable_parts=syllable_parts,
@@ -524,12 +528,26 @@ def analyze_word(word: str) -> WordAnalysis:
     return WordAnalysis(
         thai=word,
         rtgs=word_rtgs,
-        gloss=THAI_ZH_GLOSSES.get(word, "…"),
+        gloss=lookup_gloss(word),
         syllables=analyzed,
         tones=tones,
         original_syllables=original_syls,
         syllable_parts=syllable_parts,
     )
+
+
+def _safe_analyze_word(word: str) -> WordAnalysis:
+    """Analyze a single word, returning a fallback on failure."""
+    try:
+        return analyze_word(word)
+    except Exception:
+        return WordAnalysis(
+            thai=word,
+            rtgs=word,
+            gloss=THAI_ZH_GLOSSES.get(word, '…'),
+            syllables=[],
+            tones=['mid'],
+        )
 
 
 def analyze_text(text: str) -> list[list[WordAnalysis]]:
@@ -542,7 +560,7 @@ def analyze_text(text: str) -> list[list[WordAnalysis]]:
 
     for sentence in sentences:
         words = tokenize_words(sentence)
-        analyzed_words = [analyze_word(w) for w in words]
+        analyzed_words = [_safe_analyze_word(w) for w in words]
         if analyzed_words:
             result.append(analyzed_words)
 
@@ -550,6 +568,6 @@ def analyze_text(text: str) -> list[list[WordAnalysis]]:
     if not result:
         words = tokenize_words(text)
         if words:
-            result.append([analyze_word(w) for w in words])
+            result.append([_safe_analyze_word(w) for w in words])
 
     return result

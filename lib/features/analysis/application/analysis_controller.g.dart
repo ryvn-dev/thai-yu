@@ -7,7 +7,7 @@ part of 'analysis_controller.dart';
 // **************************************************************************
 
 String _$analysisControllerHash() =>
-    r'0e88e40ef915f57a5d0f76dd21bd46568ec93745';
+    r'090803f2ddc02f2b840a0b6e86406e35b61c9585';
 
 /// See also [AnalysisController].
 @ProviderFor(AnalysisController)

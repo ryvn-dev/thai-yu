@@ -42,6 +42,9 @@ dependencies:
   # Crypto (SHA-256 for cache keys)
   crypto: ^3.0.6
 
+  # File paths
+  path_provider: ^2.1.5
+
   # UI
   google_fonts: ^6.2.1
   flutter_svg: ^2.0.16

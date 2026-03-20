@@ -1,8 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TextRequest(BaseModel):
-    text: str
+    text: str = Field(..., min_length=1, max_length=10000)
 
 
 class TokenizeResponse(BaseModel):
@@ -36,6 +36,7 @@ class SyllableParts(BaseModel):
     rtgs: str
     tone: str
     tone_reason: str = ""  # why this tone (per-syllable)
+    gloss: str = "…"       # per-syllable Chinese meaning
     parts: list[PhonemeBreakdown]
     is_ho_nam: bool = False
     has_implicit_vowel: bool = False
