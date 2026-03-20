@@ -100,15 +100,49 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
     );
   }
 
-  Widget _buildItem(SavedWord item) {
+  Widget _buildColoredThai(SavedWord item) {
     final tones = (jsonDecode(item.toneJson) as List<dynamic>)
         .map((t) => ToneType.values.firstWhere(
               (v) => v.name == t,
               orElse: () => ToneType.mid,
             ))
         .toList();
-    final primaryTone = tones.first;
 
+    // Try to get per-syllable coloring from wordJson
+    try {
+      final wordData =
+          jsonDecode(item.wordJson) as Map<String, dynamic>;
+      final syllables =
+          (wordData['originalSyllables'] as List<dynamic>?)
+              ?.cast<String>() ??
+              [];
+      if (syllables.length > 1 && syllables.length == tones.length) {
+        return RichText(
+          text: TextSpan(
+            children: List.generate(syllables.length, (i) {
+              return TextSpan(
+                text: syllables[i],
+                style: AppTextStyles.thaiInput.copyWith(
+                  fontSize: 22,
+                  color: tones[i].color,
+                ),
+              );
+            }),
+          ),
+        );
+      }
+    } catch (_) {}
+
+    return Text(
+      item.thai,
+      style: AppTextStyles.thaiInput.copyWith(
+        fontSize: 22,
+        color: tones.first.color,
+      ),
+    );
+  }
+
+  Widget _buildItem(SavedWord item) {
     return Dismissible(
       key: Key(item.id.toString()),
       direction: DismissDirection.endToStart,
@@ -142,14 +176,8 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
           ),
           child: Row(
             children: [
-              // Thai text
-              Text(
-                item.thai,
-                style: AppTextStyles.thaiInput.copyWith(
-                  fontSize: 22,
-                  color: primaryTone.color,
-                ),
-              ),
+              // Thai text with per-syllable tone colors
+              _buildColoredThai(item),
               const SizedBox(width: 10),
               // Roman + gloss
               Expanded(
