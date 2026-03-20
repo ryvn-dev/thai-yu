@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
+import '../../../../data/datasources/analysis_cache.dart';
 import '../../../../data/datasources/tts_service.dart';
 import '../../../../data/models/tone_type.dart';
 import '../../../../data/models/word_block.dart';
@@ -110,12 +113,51 @@ class PronunciationCard extends ConsumerWidget {
                 word.gloss,
                 style: const TextStyle(fontSize: 13, color: AppColors.ink3),
               ),
+              const SizedBox(width: 8),
+              _SaveWordButton(word: word),
+            ],
+          ),
+        ),
+
+        // TTS speed toggle
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
+          child: Row(
+            children: [
+              Consumer(builder: (context, ref, _) {
+                final speed = ref.watch(ttsSpeedNotifierProvider);
+                return GestureDetector(
+                  onTap: () =>
+                      ref.read(ttsSpeedNotifierProvider.notifier).cycle(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface2,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.speed_rounded,
+                            size: 12, color: AppColors.ink3),
+                        const SizedBox(width: 4),
+                        Text(
+                          speed.label,
+                          style: const TextStyle(
+                              fontSize: 10, color: AppColors.ink2),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
             ],
           ),
         ),
 
         // Per-syllable phoneme breakdown
-        ...word.syllableBreakdowns.map(_buildSyllableSection),
+        ...word.syllableBreakdowns.map((syl) => _buildSyllableSection(syl, ref)),
 
         // Bottom padding
         const SizedBox(height: 12),
@@ -123,7 +165,7 @@ class PronunciationCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildSyllableSection(SyllableBreakdown syl) {
+  Widget _buildSyllableSection(SyllableBreakdown syl, WidgetRef ref) {
     final sylTone = ToneType.values.firstWhere(
       (t) => t.name == syl.tone,
       orElse: () => ToneType.mid,
@@ -152,12 +194,15 @@ class PronunciationCard extends ConsumerWidget {
                   spacing: 5,
                   runSpacing: 4,
                   children: [
-                    // Original spelling
-                    Text(
-                      origThai,
-                      style: AppTextStyles.thaiPhoneme.copyWith(
-                        color: sylTone.color,
-                        fontSize: 16,
+                    // Original spelling — tap to hear this syllable
+                    GestureDetector(
+                      onTap: () => ref.read(ttsServiceProvider).speak(syl.thai),
+                      child: Text(
+                        origThai,
+                        style: AppTextStyles.thaiPhoneme.copyWith(
+                          color: sylTone.color,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                     // Pronunciation in parentheses (if different)
@@ -303,6 +348,62 @@ class PronunciationCard extends ConsumerWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _SaveWordButton extends ConsumerStatefulWidget {
+  const _SaveWordButton({required this.word});
+  final WordBlock word;
+
+  @override
+  ConsumerState<_SaveWordButton> createState() => _SaveWordButtonState();
+}
+
+class _SaveWordButtonState extends ConsumerState<_SaveWordButton> {
+  bool _saved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSaved();
+  }
+
+  Future<void> _checkSaved() async {
+    final db = await ref.read(analysisDatabaseProvider.future);
+    final saved = await db.isWordSaved(widget.word.thai);
+    if (mounted) setState(() => _saved = saved);
+  }
+
+  Future<void> _toggleSave() async {
+    final db = await ref.read(analysisDatabaseProvider.future);
+    if (_saved) {
+      // Find and delete
+      final all = await db.getAllSavedWords();
+      final match = all.where((w) => w.thai == widget.word.thai).firstOrNull;
+      if (match != null) await db.deleteSavedWord(match.id);
+    } else {
+      await db.saveWord(
+        thai: widget.word.thai,
+        roman: widget.word.roman,
+        gloss: widget.word.gloss,
+        toneJson: jsonEncode(widget.word.tones.map((t) => t.name).toList()),
+        sourceText: '',
+        wordJson: jsonEncode(widget.word.toJson()),
+      );
+    }
+    if (mounted) setState(() => _saved = !_saved);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _toggleSave,
+      child: Icon(
+        _saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+        size: 20,
+        color: _saved ? AppColors.ink : AppColors.ink3,
       ),
     );
   }
