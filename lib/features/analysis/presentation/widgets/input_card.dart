@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
@@ -54,6 +55,29 @@ class InputCard extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                   fillColor: Colors.transparent,
                   filled: true,
+                  suffixIcon: GestureDetector(
+                    onTap: () async {
+                      final data = await Clipboard.getData(Clipboard.kTextPlain);
+                      if (data?.text?.isNotEmpty ?? false) {
+                        controller.text = data!.text!;
+                        controller.selection = TextSelection.collapsed(
+                          offset: controller.text.length,
+                        );
+                      }
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Icon(
+                        Icons.content_paste_rounded,
+                        size: 18,
+                        color: AppColors.ink3,
+                      ),
+                    ),
+                  ),
+                  suffixIconConstraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 24,
+                  ),
                 ),
                 maxLines: 3,
                 minLines: 2,
