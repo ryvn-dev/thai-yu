@@ -1,9 +1,13 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
+import '../../../../data/datasources/backend_service.dart';
 import '../../../analysis/application/analysis_controller.dart';
 import '../../../analysis/presentation/widgets/input_card.dart';
 import '../widgets/recent_analyses.dart';
@@ -18,11 +22,29 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _textController = TextEditingController();
   bool _isLoading = false;
+  bool? _backendHealthy;
+  Timer? _healthTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkHealth();
+    _healthTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _checkHealth(),
+    );
+  }
 
   @override
   void dispose() {
+    _healthTimer?.cancel();
     _textController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkHealth() async {
+    final healthy = await ref.read(backendServiceProvider).isHealthy();
+    if (mounted) setState(() => _backendHealthy = healthy);
   }
 
   Future<void> _onAnalyze() async {
@@ -35,15 +57,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (mounted) {
         await context.push('/result');
       }
+    } on SocketException catch (_) {
+      if (mounted) {
+        _showErrorSnackBar('無法連接分析服務，請確認後端已啟動');
+      }
+    } on TimeoutException catch (_) {
+      if (mounted) {
+        _showErrorSnackBar('分析逾時，請重試');
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+        final msg = e.toString();
+        if (msg.contains('Connection refused') ||
+            msg.contains('SocketException')) {
+          _showErrorSnackBar('無法連接分析服務，請確認後端已啟動');
+        } else {
+          _showErrorSnackBar('分析失敗: ${_friendlyError(msg)}');
+        }
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(
+          label: '重試',
+          onPressed: _onAnalyze,
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  String _friendlyError(String raw) {
+    if (raw.contains('BackendException')) {
+      final match = RegExp(r':\s*(.+)$').firstMatch(raw);
+      return match?.group(1) ?? raw;
+    }
+    return raw;
   }
 
   void _tryDemo() {
@@ -115,6 +170,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
         const Spacer(),
+        // Backend health indicator
+        if (_backendHealthy != null)
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: GestureDetector(
+              onTap: _checkHealth,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: _backendHealthy!
+                      ? const Color(0xFF4CAF50)
+                      : const Color(0xFFEF5350),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ),
+        IconButton(
+          onPressed: () => context.push('/vocabulary'),
+          icon: const Icon(Icons.bookmark_border_rounded,
+              color: AppColors.ink3, size: 20),
+          visualDensity: VisualDensity.compact,
+        ),
+        IconButton(
+          onPressed: () => context.push('/history'),
+          icon: const Icon(Icons.history_rounded,
+              color: AppColors.ink3, size: 20),
+          visualDensity: VisualDensity.compact,
+        ),
         IconButton(
           onPressed: () => context.push('/settings'),
           icon: const Icon(Icons.settings_outlined,
