@@ -174,6 +174,10 @@ class AnalysisController extends _$AnalysisController {
       throw Exception(e.message);
     }
   }
+
+  void setResult(AnalysisResult result) {
+    state = result;
+  }
 }
 
 @riverpod
