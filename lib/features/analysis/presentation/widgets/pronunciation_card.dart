@@ -80,11 +80,25 @@ class PronunciationCard extends ConsumerWidget {
             children: [
               GestureDetector(
                 onTap: () => ref.read(ttsServiceProvider).speak(word.thai),
-                child: Text(
-                  word.thai,
-                  style:
-                      AppTextStyles.thaiHeadline.copyWith(color: tone.color),
-                ),
+                child: word.originalSyllables.length > 1 &&
+                        word.originalSyllables.length == word.tones.length
+                    ? RichText(
+                        text: TextSpan(
+                          children: List.generate(
+                              word.originalSyllables.length, (i) {
+                            return TextSpan(
+                              text: word.originalSyllables[i],
+                              style: AppTextStyles.thaiHeadline
+                                  .copyWith(color: word.tones[i].color),
+                            );
+                          }),
+                        ),
+                      )
+                    : Text(
+                        word.thai,
+                        style: AppTextStyles.thaiHeadline
+                            .copyWith(color: tone.color),
+                      ),
               ),
               const SizedBox(width: 10),
               Text(

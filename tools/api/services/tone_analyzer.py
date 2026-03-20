@@ -357,7 +357,7 @@ def _build_syllable_parts(
     # These have an implied short /o/ or /a/
     if not vowel_added:
         parts.append(PhonemeBreakdown(
-            label="韻母", char="(隱含)",
+            label="韻母", char="◌",
             sound="/o/", zh_approx="隱含短元音，像短「哦」",
         ))
         vowel_added = True
