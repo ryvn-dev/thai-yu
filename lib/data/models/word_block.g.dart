@@ -81,6 +81,7 @@ _$SyllableBreakdownImpl _$$SyllableBreakdownImplFromJson(
   rtgs: json['rtgs'] as String? ?? '',
   tone: json['tone'] as String? ?? 'mid',
   toneReason: json['toneReason'] as String? ?? '',
+  gloss: json['gloss'] as String? ?? '…',
   parts:
       (json['parts'] as List<dynamic>?)
           ?.map((e) => PhonemeBreakdown.fromJson(e as Map<String, dynamic>))
@@ -98,6 +99,7 @@ Map<String, dynamic> _$$SyllableBreakdownImplToJson(
   'rtgs': instance.rtgs,
   'tone': instance.tone,
   'toneReason': instance.toneReason,
+  'gloss': instance.gloss,
   'parts': instance.parts,
   'isHoNam': instance.isHoNam,
   'hasImplicitVowel': instance.hasImplicitVowel,

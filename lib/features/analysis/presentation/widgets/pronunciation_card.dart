@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_text_styles.dart';
 import '../../../../data/datasources/tts_service.dart';
-import '../../../../data/models/thai_glosses.dart';
 import '../../../../data/models/tone_type.dart';
 import '../../../../data/models/word_block.dart';
 import 'tone_curve_painter.dart';
@@ -131,8 +130,8 @@ class PronunciationCard extends ConsumerWidget {
         syl.originalThai.isNotEmpty ? syl.originalThai : syl.thai;
     final showPron = origThai != syl.thai; // pronunciate differs
 
-    // Sub-word gloss: show if this syllable is independently meaningful
-    final sylGloss = ThaiGlosses.lookup(origThai);
+    // Sub-word gloss from backend
+    final sylGloss = syl.gloss;
     final showSylGloss =
         sylGloss != '…' && sylGloss != word.gloss && word.tones.length > 1;
 

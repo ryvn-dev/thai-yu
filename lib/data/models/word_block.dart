@@ -57,6 +57,7 @@ abstract class SyllableBreakdown with _$SyllableBreakdown {
     @Default('') String rtgs,
     @Default('mid') String tone,
     @Default('') String toneReason,
+    @Default('…') String gloss,
     @Default([]) List<PhonemeBreakdown> parts,
     @Default(false) bool isHoNam,
     @Default(false) bool hasImplicitVowel,

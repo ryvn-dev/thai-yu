@@ -769,6 +769,7 @@ mixin _$SyllableBreakdown {
   String get rtgs => throw _privateConstructorUsedError;
   String get tone => throw _privateConstructorUsedError;
   String get toneReason => throw _privateConstructorUsedError;
+  String get gloss => throw _privateConstructorUsedError;
   List<PhonemeBreakdown> get parts => throw _privateConstructorUsedError;
   bool get isHoNam => throw _privateConstructorUsedError;
   bool get hasImplicitVowel => throw _privateConstructorUsedError;
@@ -796,6 +797,7 @@ abstract class $SyllableBreakdownCopyWith<$Res> {
     String rtgs,
     String tone,
     String toneReason,
+    String gloss,
     List<PhonemeBreakdown> parts,
     bool isHoNam,
     bool hasImplicitVowel,
@@ -822,6 +824,7 @@ class _$SyllableBreakdownCopyWithImpl<$Res, $Val extends SyllableBreakdown>
     Object? rtgs = null,
     Object? tone = null,
     Object? toneReason = null,
+    Object? gloss = null,
     Object? parts = null,
     Object? isHoNam = null,
     Object? hasImplicitVowel = null,
@@ -847,6 +850,10 @@ class _$SyllableBreakdownCopyWithImpl<$Res, $Val extends SyllableBreakdown>
             toneReason: null == toneReason
                 ? _value.toneReason
                 : toneReason // ignore: cast_nullable_to_non_nullable
+                      as String,
+            gloss: null == gloss
+                ? _value.gloss
+                : gloss // ignore: cast_nullable_to_non_nullable
                       as String,
             parts: null == parts
                 ? _value.parts
@@ -881,6 +888,7 @@ abstract class _$$SyllableBreakdownImplCopyWith<$Res>
     String rtgs,
     String tone,
     String toneReason,
+    String gloss,
     List<PhonemeBreakdown> parts,
     bool isHoNam,
     bool hasImplicitVowel,
@@ -906,6 +914,7 @@ class __$$SyllableBreakdownImplCopyWithImpl<$Res>
     Object? rtgs = null,
     Object? tone = null,
     Object? toneReason = null,
+    Object? gloss = null,
     Object? parts = null,
     Object? isHoNam = null,
     Object? hasImplicitVowel = null,
@@ -931,6 +940,10 @@ class __$$SyllableBreakdownImplCopyWithImpl<$Res>
         toneReason: null == toneReason
             ? _value.toneReason
             : toneReason // ignore: cast_nullable_to_non_nullable
+                  as String,
+        gloss: null == gloss
+            ? _value.gloss
+            : gloss // ignore: cast_nullable_to_non_nullable
                   as String,
         parts: null == parts
             ? _value._parts
@@ -958,6 +971,7 @@ class _$SyllableBreakdownImpl implements _SyllableBreakdown {
     this.rtgs = '',
     this.tone = 'mid',
     this.toneReason = '',
+    this.gloss = '…',
     final List<PhonemeBreakdown> parts = const [],
     this.isHoNam = false,
     this.hasImplicitVowel = false,
@@ -980,6 +994,9 @@ class _$SyllableBreakdownImpl implements _SyllableBreakdown {
   @override
   @JsonKey()
   final String toneReason;
+  @override
+  @JsonKey()
+  final String gloss;
   final List<PhonemeBreakdown> _parts;
   @override
   @JsonKey()
@@ -998,7 +1015,7 @@ class _$SyllableBreakdownImpl implements _SyllableBreakdown {
 
   @override
   String toString() {
-    return 'SyllableBreakdown(thai: $thai, originalThai: $originalThai, rtgs: $rtgs, tone: $tone, toneReason: $toneReason, parts: $parts, isHoNam: $isHoNam, hasImplicitVowel: $hasImplicitVowel)';
+    return 'SyllableBreakdown(thai: $thai, originalThai: $originalThai, rtgs: $rtgs, tone: $tone, toneReason: $toneReason, gloss: $gloss, parts: $parts, isHoNam: $isHoNam, hasImplicitVowel: $hasImplicitVowel)';
   }
 
   @override
@@ -1013,6 +1030,7 @@ class _$SyllableBreakdownImpl implements _SyllableBreakdown {
             (identical(other.tone, tone) || other.tone == tone) &&
             (identical(other.toneReason, toneReason) ||
                 other.toneReason == toneReason) &&
+            (identical(other.gloss, gloss) || other.gloss == gloss) &&
             const DeepCollectionEquality().equals(other._parts, _parts) &&
             (identical(other.isHoNam, isHoNam) || other.isHoNam == isHoNam) &&
             (identical(other.hasImplicitVowel, hasImplicitVowel) ||
@@ -1028,6 +1046,7 @@ class _$SyllableBreakdownImpl implements _SyllableBreakdown {
     rtgs,
     tone,
     toneReason,
+    gloss,
     const DeepCollectionEquality().hash(_parts),
     isHoNam,
     hasImplicitVowel,
@@ -1057,6 +1076,7 @@ abstract class _SyllableBreakdown implements SyllableBreakdown {
     final String rtgs,
     final String tone,
     final String toneReason,
+    final String gloss,
     final List<PhonemeBreakdown> parts,
     final bool isHoNam,
     final bool hasImplicitVowel,
@@ -1075,6 +1095,8 @@ abstract class _SyllableBreakdown implements SyllableBreakdown {
   String get tone;
   @override
   String get toneReason;
+  @override
+  String get gloss;
   @override
   List<PhonemeBreakdown> get parts;
   @override

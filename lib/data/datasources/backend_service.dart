@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../models/thai_glosses.dart' show ThaiGlosses;
 import '../models/word_block.dart';
 
 part 'backend_service.g.dart';
@@ -14,11 +13,13 @@ class BackendService {
   final String baseUrl;
 
   Future<List<WordBlock>> analyzeText(String thaiText) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/analyze'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'text': thaiText}),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/analyze'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'text': thaiText}),
+        )
+        .timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200) {
       throw BackendException(
@@ -27,15 +28,40 @@ class BackendService {
       );
     }
 
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final sentencesJson = body['sentences'] as List<dynamic>;
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } on FormatException catch (e) {
+      throw BackendException(
+        statusCode: response.statusCode,
+        message: '回應格式錯誤: $e',
+      );
+    }
+
+    if (decoded is! Map<String, dynamic>) {
+      throw const BackendException(
+        statusCode: 0,
+        message: '回應格式錯誤: 預期 JSON 物件',
+      );
+    }
+
+    final sentencesJson = decoded['sentences'];
+    if (sentencesJson is! List<dynamic>) {
+      throw const BackendException(
+        statusCode: 0,
+        message: '回應格式錯誤: 缺少 sentences 欄位',
+      );
+    }
 
     final allWords = <WordBlock>[];
     for (var sentIdx = 0; sentIdx < sentencesJson.length; sentIdx++) {
-      final sentence = sentencesJson[sentIdx] as Map<String, dynamic>;
-      final wordsJson = sentence['words'] as List<dynamic>;
+      final sentence = sentencesJson[sentIdx];
+      if (sentence is! Map<String, dynamic>) continue;
+      final wordsJson = sentence['words'];
+      if (wordsJson is! List<dynamic>) continue;
       for (final w in wordsJson) {
-        allWords.add(_parseWord(w as Map<String, dynamic>, sentIdx));
+        if (w is! Map<String, dynamic>) continue;
+        allWords.add(_parseWord(w, sentIdx));
       }
     }
     return allWords;
@@ -69,19 +95,25 @@ class BackendService {
           'rtgs': sylPart['rtgs'] ?? '',
           'tone': sylPart['tone'] ?? 'mid',
           'toneReason': sylPart['tone_reason'] ?? '',
+          'gloss': sylPart['gloss'] ?? '…',
           'parts': parts,
           'isHoNam': sylPart['is_ho_nam'] ?? false,
           'hasImplicitVowel': sylPart['has_implicit_vowel'] ?? false,
         };
       }).toList();
 
+      // Use tone_reason from first syllable_parts (backend-computed)
+      final firstSylPart = syllableBreakdowns.isNotEmpty
+          ? syllableBreakdowns[0]
+          : <String, dynamic>{};
+
       final wordJson = <String, dynamic>{
         'thai': word['thai'] as String,
         'roman': word['rtgs'] as String? ?? '',
-        'gloss': ThaiGlosses.lookup(word['thai'] as String),
+        'gloss': word['gloss'] as String? ?? '…',
         'tones': word['tones'] as List<dynamic>? ?? ['mid'],
         'parts': <Map<String, dynamic>>[],
-        'toneReason': _buildToneReason(firstSyl),
+        'toneReason': firstSylPart['toneReason'] as String? ?? '',
         'initialConsonant': firstSyl['initial_consonant'],
         'consonantClass': firstSyl['consonant_class'],
         'toneMark': firstSyl['tone_mark'],
@@ -92,37 +124,6 @@ class BackendService {
       };
 
       return WordBlock.fromJson(wordJson);
-  }
-
-  static String _buildToneReason(Map<String, dynamic> syl) {
-    final cls = syl['consonant_class'] as String? ?? '';
-    final mark = syl['tone_mark'] as String?;
-    final sylType = syl['syllable_type'] as String? ?? '';
-    final tone = syl['tone'] as String? ?? '';
-
-    final clsLabel = switch (cls) {
-      'high' => '高類',
-      'mid' => '中類',
-      'low' => '低類',
-      _ => cls,
-    };
-
-    final markLabel = switch (mark) {
-      'mai_ek' => ' + ่',
-      'mai_tho' => ' + ้',
-      'mai_tri' => ' + ๊',
-      'mai_jattawa' => ' + ๋',
-      _ => '',
-    };
-
-    final sylLabel = switch (sylType) {
-      'live' => '活音節',
-      'dead_long' => '長元音閉音節',
-      'dead_short' => '短元音閉音節',
-      _ => sylType,
-    };
-
-    return '$clsLabel聲母$markLabel + $sylLabel → $tone';
   }
 
   Future<bool> isHealthy() async {
