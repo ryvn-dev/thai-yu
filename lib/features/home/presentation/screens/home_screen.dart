@@ -170,43 +170,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
         const Spacer(),
-        // Backend health indicator
-        if (_backendHealthy != null)
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: GestureDetector(
-              onTap: _checkHealth,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: _backendHealthy!
-                      ? const Color(0xFF4CAF50)
-                      : const Color(0xFFEF5350),
-                  shape: BoxShape.circle,
+        // Nav icons: vocabulary, history, settings (with health dot)
+        _headerIcon(
+          Icons.bookmark_border_rounded,
+          onTap: () => context.push('/vocabulary'),
+        ),
+        _headerIcon(
+          Icons.history_rounded,
+          onTap: () => context.push('/history'),
+        ),
+        Stack(
+          children: [
+            _headerIcon(
+              Icons.settings_outlined,
+              onTap: () => context.push('/settings'),
+            ),
+            // Backend health dot overlaid on settings icon
+            if (_backendHealthy != null)
+              Positioned(
+                right: 6,
+                top: 6,
+                child: GestureDetector(
+                  onTap: _checkHealth,
+                  child: Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: _backendHealthy!
+                          ? const Color(0xFF4CAF50)
+                          : const Color(0xFFEF5350),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: AppColors.surface, width: 1.5),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        IconButton(
-          onPressed: () => context.push('/vocabulary'),
-          icon: const Icon(Icons.bookmark_border_rounded,
-              color: AppColors.ink3, size: 20),
-          visualDensity: VisualDensity.compact,
-        ),
-        IconButton(
-          onPressed: () => context.push('/history'),
-          icon: const Icon(Icons.history_rounded,
-              color: AppColors.ink3, size: 20),
-          visualDensity: VisualDensity.compact,
-        ),
-        IconButton(
-          onPressed: () => context.push('/settings'),
-          icon: const Icon(Icons.settings_outlined,
-              color: AppColors.ink3, size: 20),
-          visualDensity: VisualDensity.compact,
+          ],
         ),
       ],
+    );
+  }
+
+  Widget _headerIcon(IconData icon, {required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Icon(icon, color: AppColors.ink3, size: 20),
+      ),
     );
   }
 

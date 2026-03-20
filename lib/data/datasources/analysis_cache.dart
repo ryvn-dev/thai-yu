@@ -85,8 +85,13 @@ class AnalysisDatabase extends _$AnalysisDatabase {
 
   /// Search analyses by input text
   Future<List<CachedAnalyse>> searchAnalyses(String query) {
+    // Escape SQL LIKE wildcards in user input
+    final escaped = query
+        .replaceAll('\\', '\\\\')
+        .replaceAll('%', '\\%')
+        .replaceAll('_', '\\_');
     return (select(cachedAnalyses)
-          ..where((t) => t.input.like('%$query%'))
+          ..where((t) => t.input.like('%$escaped%'))
           ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
         .get();
   }
@@ -141,6 +146,11 @@ class AnalysisDatabase extends _$AnalysisDatabase {
   /// Delete a saved word by id
   Future<void> deleteSavedWord(int id) {
     return (delete(savedWords)..where((t) => t.id.equals(id))).go();
+  }
+
+  /// Delete a saved word by Thai text
+  Future<void> deleteSavedWordByThai(String thai) {
+    return (delete(savedWords)..where((t) => t.thai.equals(thai))).go();
   }
 
   /// Compute SHA-256 hash of input text for cache key

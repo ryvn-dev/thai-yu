@@ -113,17 +113,10 @@ class PronunciationCard extends ConsumerWidget {
                 word.gloss,
                 style: const TextStyle(fontSize: 13, color: AppColors.ink3),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               _SaveWordButton(word: word),
-            ],
-          ),
-        ),
-
-        // TTS speed toggle
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
-          child: Row(
-            children: [
+              const SizedBox(width: 6),
+              // TTS speed toggle
               Consumer(builder: (context, ref, _) {
                 final speed = ref.watch(ttsSpeedNotifierProvider);
                 return GestureDetector(
@@ -131,23 +124,15 @@ class PronunciationCard extends ConsumerWidget {
                       ref.read(ttsSpeedNotifierProvider.notifier).cycle(),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                        horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: AppColors.surface2,
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.speed_rounded,
-                            size: 12, color: AppColors.ink3),
-                        const SizedBox(width: 4),
-                        Text(
-                          speed.label,
-                          style: const TextStyle(
-                              fontSize: 10, color: AppColors.ink2),
-                        ),
-                      ],
+                    child: Text(
+                      speed.label,
+                      style: const TextStyle(
+                          fontSize: 9, color: AppColors.ink3),
                     ),
                   ),
                 );
@@ -379,10 +364,7 @@ class _SaveWordButtonState extends ConsumerState<_SaveWordButton> {
   Future<void> _toggleSave() async {
     final db = await ref.read(analysisDatabaseProvider.future);
     if (_saved) {
-      // Find and delete
-      final all = await db.getAllSavedWords();
-      final match = all.where((w) => w.thai == widget.word.thai).firstOrNull;
-      if (match != null) await db.deleteSavedWord(match.id);
+      await db.deleteSavedWordByThai(widget.word.thai);
     } else {
       await db.saveWord(
         thai: widget.word.thai,

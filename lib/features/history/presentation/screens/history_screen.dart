@@ -56,15 +56,32 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   void _openResult(CachedAnalyse item) {
-    // Parse cached response and navigate to result
-    final decoded = jsonDecode(item.response) as List<dynamic>;
-    final words = decoded
-        .map((e) => WordBlock.fromJson(e as Map<String, dynamic>))
-        .toList();
+    // Parse cached response — handle both old (list) and new (map) formats
+    final decoded = jsonDecode(item.response);
+    final List<WordBlock> words;
+    final Map<int, String> sentenceGlosses;
+
+    if (decoded is Map<String, dynamic> && decoded.containsKey('words')) {
+      words = (decoded['words'] as List<dynamic>)
+          .map((e) => WordBlock.fromJson(e as Map<String, dynamic>))
+          .toList();
+      final glossesRaw =
+          decoded['sentenceGlosses'] as Map<String, dynamic>? ?? {};
+      sentenceGlosses = glossesRaw.map(
+        (k, v) => MapEntry(int.parse(k), v as String),
+      );
+    } else {
+      words = (decoded as List<dynamic>)
+          .map((e) => WordBlock.fromJson(e as Map<String, dynamic>))
+          .toList();
+      sentenceGlosses = {};
+    }
+
     ref.read(analysisControllerProvider.notifier).setResult(AnalysisResult(
       input: item.input,
       words: words,
       analyzedAt: DateTime.fromMillisecondsSinceEpoch(item.createdAt),
+      sentenceGlosses: sentenceGlosses,
     ));
     context.push('/result');
   }

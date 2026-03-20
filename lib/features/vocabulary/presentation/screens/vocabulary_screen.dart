@@ -92,7 +92,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
           ),
           SizedBox(height: 6),
           Text(
-            '在分析結果中點擊 ☆ 收藏詞彙',
+            '在分析結果中點擊書籤圖示收藏詞彙',
             style: TextStyle(fontSize: 12, color: AppColors.ink3),
           ),
         ],
