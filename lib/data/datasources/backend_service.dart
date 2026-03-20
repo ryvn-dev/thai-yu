@@ -12,7 +12,7 @@ class BackendService {
 
   final String baseUrl;
 
-  Future<List<WordBlock>> analyzeText(String thaiText) async {
+  Future<(List<WordBlock>, Map<int, String>)> analyzeText(String thaiText) async {
     final response = await http
         .post(
           Uri.parse('$baseUrl/analyze'),
@@ -54,6 +54,7 @@ class BackendService {
     }
 
     final allWords = <WordBlock>[];
+    final sentenceGlosses = <int, String>{};
     for (var sentIdx = 0; sentIdx < sentencesJson.length; sentIdx++) {
       final sentence = sentencesJson[sentIdx];
       if (sentence is! Map<String, dynamic>) continue;
@@ -63,8 +64,12 @@ class BackendService {
         if (w is! Map<String, dynamic>) continue;
         allWords.add(_parseWord(w, sentIdx));
       }
+      final gloss = sentence['sentence_gloss'] as String?;
+      if (gloss != null && gloss.isNotEmpty) {
+        sentenceGlosses[sentIdx] = gloss;
+      }
     }
-    return allWords;
+    return (allWords, sentenceGlosses);
   }
 
   WordBlock _parseWord(Map<String, dynamic> w, int sentenceIndex) {

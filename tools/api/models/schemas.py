@@ -67,6 +67,7 @@ class WordAnalysis(BaseModel):
 
 class SentenceAnalysis(BaseModel):
     words: list[WordAnalysis]
+    sentence_gloss: str = ""  # combined Chinese meaning for the sentence
 
 
 class AnalyzeResponse(BaseModel):

@@ -11,6 +11,7 @@ abstract class AnalysisResult with _$AnalysisResult {
     required String input,
     required List<WordBlock> words,
     required DateTime analyzedAt,
+    @Default({}) Map<int, String> sentenceGlosses,
   }) = _AnalysisResult;
 
   factory AnalysisResult.fromJson(Map<String, dynamic> json) =>

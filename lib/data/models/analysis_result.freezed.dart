@@ -24,6 +24,7 @@ mixin _$AnalysisResult {
   String get input => throw _privateConstructorUsedError;
   List<WordBlock> get words => throw _privateConstructorUsedError;
   DateTime get analyzedAt => throw _privateConstructorUsedError;
+  Map<int, String> get sentenceGlosses => throw _privateConstructorUsedError;
 
   /// Serializes this AnalysisResult to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -42,7 +43,12 @@ abstract class $AnalysisResultCopyWith<$Res> {
     $Res Function(AnalysisResult) then,
   ) = _$AnalysisResultCopyWithImpl<$Res, AnalysisResult>;
   @useResult
-  $Res call({String input, List<WordBlock> words, DateTime analyzedAt});
+  $Res call({
+    String input,
+    List<WordBlock> words,
+    DateTime analyzedAt,
+    Map<int, String> sentenceGlosses,
+  });
 }
 
 /// @nodoc
@@ -63,6 +69,7 @@ class _$AnalysisResultCopyWithImpl<$Res, $Val extends AnalysisResult>
     Object? input = null,
     Object? words = null,
     Object? analyzedAt = null,
+    Object? sentenceGlosses = null,
   }) {
     return _then(
       _value.copyWith(
@@ -78,6 +85,10 @@ class _$AnalysisResultCopyWithImpl<$Res, $Val extends AnalysisResult>
                 ? _value.analyzedAt
                 : analyzedAt // ignore: cast_nullable_to_non_nullable
                       as DateTime,
+            sentenceGlosses: null == sentenceGlosses
+                ? _value.sentenceGlosses
+                : sentenceGlosses // ignore: cast_nullable_to_non_nullable
+                      as Map<int, String>,
           )
           as $Val,
     );
@@ -93,7 +104,12 @@ abstract class _$$AnalysisResultImplCopyWith<$Res>
   ) = __$$AnalysisResultImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String input, List<WordBlock> words, DateTime analyzedAt});
+  $Res call({
+    String input,
+    List<WordBlock> words,
+    DateTime analyzedAt,
+    Map<int, String> sentenceGlosses,
+  });
 }
 
 /// @nodoc
@@ -113,6 +129,7 @@ class __$$AnalysisResultImplCopyWithImpl<$Res>
     Object? input = null,
     Object? words = null,
     Object? analyzedAt = null,
+    Object? sentenceGlosses = null,
   }) {
     return _then(
       _$AnalysisResultImpl(
@@ -128,6 +145,10 @@ class __$$AnalysisResultImplCopyWithImpl<$Res>
             ? _value.analyzedAt
             : analyzedAt // ignore: cast_nullable_to_non_nullable
                   as DateTime,
+        sentenceGlosses: null == sentenceGlosses
+            ? _value._sentenceGlosses
+            : sentenceGlosses // ignore: cast_nullable_to_non_nullable
+                  as Map<int, String>,
       ),
     );
   }
@@ -140,7 +161,9 @@ class _$AnalysisResultImpl implements _AnalysisResult {
     required this.input,
     required final List<WordBlock> words,
     required this.analyzedAt,
-  }) : _words = words;
+    final Map<int, String> sentenceGlosses = const {},
+  }) : _words = words,
+       _sentenceGlosses = sentenceGlosses;
 
   factory _$AnalysisResultImpl.fromJson(Map<String, dynamic> json) =>
       _$$AnalysisResultImplFromJson(json);
@@ -157,10 +180,18 @@ class _$AnalysisResultImpl implements _AnalysisResult {
 
   @override
   final DateTime analyzedAt;
+  final Map<int, String> _sentenceGlosses;
+  @override
+  @JsonKey()
+  Map<int, String> get sentenceGlosses {
+    if (_sentenceGlosses is EqualUnmodifiableMapView) return _sentenceGlosses;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_sentenceGlosses);
+  }
 
   @override
   String toString() {
-    return 'AnalysisResult(input: $input, words: $words, analyzedAt: $analyzedAt)';
+    return 'AnalysisResult(input: $input, words: $words, analyzedAt: $analyzedAt, sentenceGlosses: $sentenceGlosses)';
   }
 
   @override
@@ -171,7 +202,11 @@ class _$AnalysisResultImpl implements _AnalysisResult {
             (identical(other.input, input) || other.input == input) &&
             const DeepCollectionEquality().equals(other._words, _words) &&
             (identical(other.analyzedAt, analyzedAt) ||
-                other.analyzedAt == analyzedAt));
+                other.analyzedAt == analyzedAt) &&
+            const DeepCollectionEquality().equals(
+              other._sentenceGlosses,
+              _sentenceGlosses,
+            ));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -181,6 +216,7 @@ class _$AnalysisResultImpl implements _AnalysisResult {
     input,
     const DeepCollectionEquality().hash(_words),
     analyzedAt,
+    const DeepCollectionEquality().hash(_sentenceGlosses),
   );
 
   /// Create a copy of AnalysisResult
@@ -205,6 +241,7 @@ abstract class _AnalysisResult implements AnalysisResult {
     required final String input,
     required final List<WordBlock> words,
     required final DateTime analyzedAt,
+    final Map<int, String> sentenceGlosses,
   }) = _$AnalysisResultImpl;
 
   factory _AnalysisResult.fromJson(Map<String, dynamic> json) =
@@ -216,6 +253,8 @@ abstract class _AnalysisResult implements AnalysisResult {
   List<WordBlock> get words;
   @override
   DateTime get analyzedAt;
+  @override
+  Map<int, String> get sentenceGlosses;
 
   /// Create a copy of AnalysisResult
   /// with the given fields replaced by the non-null parameter values.

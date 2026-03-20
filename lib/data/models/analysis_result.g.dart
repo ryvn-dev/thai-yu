@@ -13,6 +13,11 @@ _$AnalysisResultImpl _$$AnalysisResultImplFromJson(Map<String, dynamic> json) =>
           .map((e) => WordBlock.fromJson(e as Map<String, dynamic>))
           .toList(),
       analyzedAt: DateTime.parse(json['analyzedAt'] as String),
+      sentenceGlosses:
+          (json['sentenceGlosses'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(int.parse(k), e as String),
+          ) ??
+          const {},
     );
 
 Map<String, dynamic> _$$AnalysisResultImplToJson(
@@ -21,4 +26,7 @@ Map<String, dynamic> _$$AnalysisResultImplToJson(
   'input': instance.input,
   'words': instance.words,
   'analyzedAt': instance.analyzedAt.toIso8601String(),
+  'sentenceGlosses': instance.sentenceGlosses.map(
+    (k, e) => MapEntry(k.toString(), e),
+  ),
 };
