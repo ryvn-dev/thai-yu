@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../config/theme/app_colors.dart';
@@ -24,6 +25,16 @@ class WordChip extends ConsumerWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: () {
+        final text = '${word.thai} (${word.roman}) ${word.gloss}';
+        Clipboard.setData(ClipboardData(text: text));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('已複製: $text'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         constraints: const BoxConstraints(minWidth: 52),
