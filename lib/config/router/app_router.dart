@@ -1,11 +1,13 @@
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../features/analysis/presentation/screens/consonant_guide_screen.dart';
 import '../../features/analysis/presentation/screens/result_screen.dart';
 import '../../features/analysis/presentation/screens/tone_guide_screen.dart';
 import '../../features/history/presentation/screens/history_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/vocabulary/presentation/screens/vocabulary_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -38,6 +40,16 @@ GoRouter router(RouterRef ref) {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/vocabulary',
+        name: 'vocabulary',
+        builder: (context, state) => const VocabularyScreen(),
+      ),
+      GoRoute(
+        path: '/consonants',
+        name: 'consonants',
+        builder: (context, state) => const ConsonantGuideScreen(),
       ),
     ],
   );
