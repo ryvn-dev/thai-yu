@@ -18,7 +18,7 @@ class ThaiGlosses {
     _cache = raw.map((k, v) => MapEntry(k, v as String));
   }
 
-  /// Look up Chinese gloss for a Thai word.
-  /// Returns '…' if not found or not yet initialized.
+  /// Exact match only. Compound split is done by backend.
+  /// Used for sub-word gloss display in bottom sheet.
   static String lookup(String thai) => _cache?[thai] ?? '…';
 }
